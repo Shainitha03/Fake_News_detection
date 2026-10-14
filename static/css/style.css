@@ -1,0 +1,669 @@
+/* =========================================
+   Fake News Detection - Main Styling
+   ========================================= */
+
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+/* =========================================
+   Page Background
+   ========================================= */
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    min-height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 30px;
+}
+
+
+/* =========================================
+   Main Container
+   ========================================= */
+
+.container {
+    width: 100%;
+    max-width: 900px;
+
+    background: white;
+
+    border-radius: 20px;
+
+    padding: 40px;
+
+    box-shadow:
+        0 15px 40px rgba(0, 0, 0, 0.25);
+}
+
+
+/* =========================================
+   Heading
+   ========================================= */
+
+h1 {
+    text-align: center;
+
+    color: #333;
+
+    font-size: 38px;
+
+    margin-bottom: 10px;
+}
+
+
+/* Subtitle */
+
+.subtitle {
+    text-align: center;
+
+    color: #666;
+
+    font-size: 16px;
+
+    margin-bottom: 30px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================
+   News Text Area
+   ========================================= */
+
+textarea {
+    width: 100%;
+
+    min-height: 250px;
+
+    padding: 20px;
+
+    border: 2px solid #ddd;
+
+    border-radius: 12px;
+
+    resize: vertical;
+
+    font-family: Arial, Helvetica, sans-serif;
+
+    font-size: 16px;
+
+    line-height: 1.6;
+
+    outline: none;
+
+    transition: border-color 0.3s;
+}
+
+
+/* Textarea focus */
+
+textarea:focus {
+    border-color: #667eea;
+
+    box-shadow:
+        0 0 8px rgba(102, 126, 234, 0.2);
+}
+
+
+/* Placeholder */
+
+textarea::placeholder {
+    color: #999;
+}
+
+.input-guidance {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: #f0f4ff;
+    border-left: 3px solid #667eea;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #4b5563;
+    line-height: 1.5;
+    text-align: left;
+}
+
+/* =========================================
+   Main Buttons
+   ========================================= */
+
+.buttons {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 15px;
+
+    margin-top: 20px;
+}
+
+
+/* All buttons */
+
+button {
+    width: 100%;
+
+    padding: 15px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background: #667eea;
+
+    color: white;
+
+    font-size: 16px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s,
+        opacity 0.2s;
+}
+
+
+/* Button hover */
+
+button:hover {
+    opacity: 0.9;
+
+    transform: translateY(-2px);
+}
+
+
+/* Button click */
+
+button:active {
+    transform: translateY(0);
+}
+
+
+/* =========================================
+   Clear Button
+   ========================================= */
+
+.clear-btn {
+    background: #555;
+}
+
+
+/* =========================================
+   Sample Selection Dropdown & Refresh Button
+   ========================================= */
+
+.sample-selection {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 15px;
+    margin-bottom: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.sample-selection select {
+    flex: 1 1 0%;
+    min-width: 0; /* Prevents flex item from expanding past container */
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    font-size: 15px;
+    outline: none;
+    background: white;
+    font-family: inherit;
+    cursor: pointer;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: border-color 0.3s;
+}
+
+.sample-selection select:focus {
+    border-color: #667eea;
+}
+
+.sample-selection button {
+    width: auto !important;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    padding: 14px 20px;
+    background: #764ba2;
+    font-size: 15px;
+    white-space: nowrap;
+    border-radius: 10px;
+}
+
+
+
+/* =========================================
+   Loading Message
+   ========================================= */
+
+#loading {
+    text-align: center;
+
+    margin-top: 20px;
+
+    color: #667eea;
+
+    font-weight: bold;
+
+    font-size: 16px;
+}
+
+
+/* =========================================
+   Prediction Result
+   ========================================= */
+
+.result {
+    margin-top: 25px;
+
+    padding: 20px;
+
+    border-radius: 12px;
+
+    text-align: center;
+
+    font-size: 24px;
+
+    font-weight: bold;
+
+    background: #f5f5f5;
+
+    color: #333;
+
+    display: none;
+}
+
+
+/* =========================================
+   About Project
+   ========================================= */
+
+.about {
+    margin-top: 35px;
+
+    padding-top: 25px;
+
+    border-top: 1px solid #ddd;
+}
+
+
+.about h2 {
+    color: #333;
+
+    margin-bottom: 12px;
+
+    font-size: 24px;
+}
+
+
+.about p {
+    color: #666;
+
+    line-height: 1.7;
+
+    font-size: 15px;
+}
+
+
+/* =========================================
+   Mobile Responsive Design
+   ========================================= */
+
+@media (max-width: 600px) {
+
+    body {
+        padding: 15px;
+    }
+
+    .container {
+        padding: 25px;
+
+        border-radius: 15px;
+    }
+
+    h1 {
+        font-size: 28px;
+    }
+
+    .subtitle {
+        font-size: 14px;
+    }
+
+    textarea {
+        min-height: 200px;
+
+        font-size: 14px;
+    }
+
+    button {
+        font-size: 15px;
+
+        padding: 14px;
+    }
+
+    .sample-selection {
+        flex-direction: column;
+    }
+
+    .sample-selection select,
+    .sample-selection button {
+        width: 100%;
+    }
+
+}
+
+
+/* =========================================
+   Result Page Styling
+   ========================================= */
+
+.result-card {
+    border-radius: 16px;
+    padding: 25px;
+    margin-top: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.result-real {
+    background-color: #e8f5e9;
+    border-left: 6px solid #28a745;
+}
+
+.result-fake {
+    background-color: #ffebee;
+    border-left: 6px solid #dc3545;
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.result-status {
+    font-size: 26px;
+    font-weight: bold;
+}
+
+.result-real .result-status {
+    color: #28a745;
+}
+
+.result-fake .result-status {
+    color: #dc3545;
+}
+
+.confidence-badge {
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+}
+
+.badge-real {
+    background: #28a745;
+}
+
+.badge-fake {
+    background: #dc3545;
+}
+
+.badge-uncertain {
+    background: #e67e22;
+}
+
+.result-uncertain {
+    background-color: #fff9e6;
+    border-left: 6px solid #f39c12;
+}
+
+.result-uncertain .result-status {
+    color: #d68910;
+}
+
+.notice-card {
+    margin-top: 20px;
+    background: #ffffff;
+    border: 1px solid #fed7aa;
+    border-left: 4px solid #f39c12;
+    border-radius: 10px;
+    padding: 16px 20px;
+    text-align: left;
+}
+
+.notice-card h4 {
+    color: #c05621;
+    font-size: 15px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.notice-card p {
+    color: #4a5568;
+    font-size: 13.5px;
+    line-height: 1.55;
+    margin-bottom: 8px;
+}
+
+.notice-card p:last-child {
+    margin-bottom: 0;
+}
+
+.factcheck-disclaimer {
+    background: #f7fafc;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #667eea;
+    margin-top: 10px !important;
+    font-size: 13px !important;
+}
+
+/* =========================================
+   Live Verification & Fact-Check Badges
+   ========================================= */
+
+.verification-card {
+    margin-top: 20px;
+    padding: 18px 22px;
+    border-radius: 12px;
+    text-align: left;
+    background: #ffffff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.verified-card {
+    border: 1.5px solid #a7f3d0;
+    border-left: 5px solid #10b981;
+    background: #f0fdf4;
+}
+
+.debunk-card {
+    border: 1.5px solid #fecaca;
+    border-left: 5px solid #ef4444;
+    background: #fef2f2;
+}
+
+.verification-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.verified-card .verification-title {
+    color: #065f46;
+}
+
+.debunk-card .verification-title {
+    color: #991b1b;
+}
+
+.verification-desc {
+    font-size: 13.5px;
+    color: #4b5563;
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.source-match-box {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: #ffffff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.source-tag {
+    align-self: flex-start;
+    display: inline-block;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #10b981;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 12px;
+}
+
+.debunk-tag {
+    background: #ef4444;
+}
+
+.source-headline a {
+    color: #1f2937;
+    font-size: 14.5px;
+    font-weight: 600;
+    text-decoration: none;
+    line-height: 1.45;
+    transition: color 0.2s;
+}
+
+.source-headline a:hover {
+    color: #667eea;
+    text-decoration: underline;
+}
+
+.probability-section {
+    margin-top: 15px;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.prob-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #333;
+}
+
+.real-text {
+    color: #28a745;
+}
+
+.fake-text {
+    color: #dc3545;
+}
+
+.prob-bar-container {
+    width: 100%;
+    height: 14px;
+    background: #e0e0e0;
+    border-radius: 7px;
+    overflow: hidden;
+    display: flex;
+}
+
+.prob-bar-real {
+    background: #28a745;
+    height: 100%;
+    transition: width 0.5s ease-in-out;
+}
+
+.prob-bar-fake {
+    background: #dc3545;
+    height: 100%;
+    transition: width 0.5s ease-in-out;
+}
+
+.news-preview-box {
+    margin-top: 25px;
+    text-align: left;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+}
+
+.news-preview-box h3 {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 10px;
+}
+
+.news-preview-text {
+    font-size: 14px;
+    color: #333;
+    line-height: 1.6;
+    max-height: 250px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    padding-right: 5px;
+}
+
+.actions-container {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.back-btn {
+    display: inline-block;
+    padding: 14px 28px;
+    background: #667eea;
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 10px;
+    transition: background 0.2s, transform 0.2s;
+    box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+}
+
+.back-btn:hover {
+    background: #5a6fd6;
+    transform: translateY(-2px);
+}
+
+.error-box {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}

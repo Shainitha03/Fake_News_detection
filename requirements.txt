@@ -1,0 +1,9 @@
+# Project: Fake News Detection Using Classical NLP and Machine Learning
+# Requirements file
+
+Flask>=2.3.0
+scikit-learn>=1.3.0
+nltk>=3.8.1
+pandas>=2.0.0
+numpy>=1.24.0
+joblib>=1.3.0

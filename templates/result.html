@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Prediction Result - Fake News Detection</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Analysis Result</h1>
+
+        <p class="subtitle">
+            Natural Language Processing & Machine Learning Classification
+        </p>
+
+        {% if error %}
+        <div class="result error-box" style="display: block;">
+            ⚠️ {{ error }}
+        </div>
+        <div style="text-align: center; margin-top: 25px;">
+            <a href="/" class="back-btn">⬅ Back to News Detector</a>
+        </div>
+        {% else %}
+
+        <!-- Result Card -->
+        <div class="result-card {% if prediction == 'REAL' %}result-real{% elif prediction == 'FAKE' %}result-fake{% else %}result-uncertain{% endif %}">
+
+            <div class="result-header">
+                <div class="result-status">
+                    {% if prediction == 'REAL' %}
+                    ✅ REAL NEWS
+                    {% elif prediction == 'FAKE' %}
+                    ⚠️ FAKE NEWS
+                    {% else %}
+                    ⚖️ INCONCLUSIVE / UNCERTAIN
+                    {% endif %}
+                </div>
+                <div class="confidence-badge {% if prediction == 'REAL' %}badge-real{% elif prediction == 'FAKE' %}badge-fake{% else %}badge-uncertain{% endif %}">
+                    {% if prediction == 'UNCERTAIN' %}
+                    Borderline ({{ confidence }}%)
+                    {% else %}
+                    {{ confidence }}% Confidence
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Probability Bar -->
+            <div class="probability-section">
+                <div class="prob-labels">
+                    <span>Probabilities:</span>
+                    <span>
+                        <strong class="real-text">Real: {{ real_probability }}%</strong> |
+                        <strong class="fake-text">Fake: {{ fake_probability }}%</strong>
+                    </span>
+                </div>
+                <div class="prob-bar-container">
+                    <div class="prob-bar-real" style="width: {{ real_probability }}%;"
+                        title="Real: {{ real_probability }}%"></div>
+                    <div class="prob-bar-fake" style="width: {{ fake_probability }}%;"
+                        title="Fake: {{ fake_probability }}%"></div>
+                </div>
+            </div>
+
+            <!-- Live News & Fact-Check Verification Card -->
+            {% if verified_info %}
+                {% if verified_info.type == 'VERIFIED' %}
+                <div class="verification-card verified-card">
+                    <div class="verification-title">
+                        🌐 Real-World News Verification: Confirmed
+                    </div>
+                    <p class="verification-desc">
+                        This story was cross-referenced and corroborated by reputable news coverage:
+                    </p>
+                    <div class="source-match-box">
+                        <span class="source-tag">{{ verified_info.source }}</span>
+                        <div class="source-headline">
+                            {% if verified_info.link %}
+                            <a href="{{ verified_info.link }}" target="_blank" rel="noopener noreferrer">
+                                "{{ verified_info.title }}" ↗
+                            </a>
+                            {% else %}
+                            "{{ verified_info.title }}"
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% elif verified_info.type == 'DEBUNKED' %}
+                <div class="verification-card debunk-card">
+                    <div class="verification-title">
+                        🚨 Fact-Check Warning: Debunked Hoax / False Claim
+                    </div>
+                    <p class="verification-desc">
+                        This claim has been investigated by professional fact-checkers and identified as false, misleading, or a viral hoax:
+                    </p>
+                    <div class="source-match-box">
+                        <span class="source-tag debunk-tag">{{ verified_info.source }}</span>
+                        <div class="source-headline">
+                            {% if verified_info.link %}
+                            <a href="{{ verified_info.link }}" target="_blank" rel="noopener noreferrer">
+                                "{{ verified_info.title }}" ↗
+                            </a>
+                            {% else %}
+                            "{{ verified_info.title }}"
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+
+            <!-- AI Insight / Diagnostic Notice -->
+            {% if not verified_info and (prediction == 'UNCERTAIN' or is_short_text) %}
+            <div class="notice-card">
+                <h4>🔍 Analysis Insight &amp; Limitations</h4>
+                {% if prediction == 'UNCERTAIN' %}
+                <p>
+                    <strong>Balanced Probabilities:</strong> The model's score is nearly split ({{ real_probability }}% Real vs {{ fake_probability }}% Fake). Neither class is dominant, so declaring it strictly "Real" or "Fake" would be unreliable.
+                </p>
+                {% endif %}
+                {% if is_short_text %}
+                <p>
+                    <strong>Short Input Notice ({{ word_count }} words):</strong> Machine learning fake news classifiers are trained on full news articles (100–500+ words). Short sentences lack journalistic structures, datelines, and context, which can distort probability scores.
+                </p>
+                {% endif %}
+                <p class="factcheck-disclaimer">
+                    💡 <em>Tip: For breaking or live events, the system cross-references major news publications. If no major media has reported on this statement, it relies on linguistic ML patterns.</em>
+                </p>
+            </div>
+            {% endif %}
+
+            <!-- News Snippet Container -->
+            <div class="news-preview-box">
+                <h3>Analyzed News Text:</h3>
+                <p style="font-size: 0.9em; color: #555; margin-bottom: 10px;">
+                    Below is the text submitted for evaluation (Length: {{ word_count }} words | Model Features Recognized: {{ vocab_matches }}):
+                </p>
+                <div class="news-preview-text">
+                    {{ news_text }}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Back Button -->
+        <div class="actions-container">
+            <a href="/" class="back-btn">⬅ Back to News Detector</a>
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</body>
+
+</html>

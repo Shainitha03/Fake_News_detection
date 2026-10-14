@@ -1,0 +1,20 @@
+{
+    "accuracy": 97.4,
+    "precision": 97.02,
+    "recall": 97.8,
+    "f1_score": 97.41,
+    "confusion_matrix": [
+        [
+            970,
+            30
+        ],
+        [
+            22,
+            978
+        ]
+    ],
+    "total_samples": 9998,
+    "train_samples": 7998,
+    "test_samples": 2000,
+    "vocab_size": 50000
+}

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Fake News Detection</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1> Fake News Detection</h1>
+
+        <p class="subtitle">
+            Detect misleading news using Natural Language Processing
+            and Machine Learning
+        </p>
+
+        <!-- Sample News Selection -->
+        <div class="sample-selection">
+            <select id="sampleDropdown" onchange="pasteSample()">
+                <option value="">-- Select a sample news article --</option>
+            </select>
+            <button type="button" onclick="loadNewSamples()">
+                Refresh Samples
+            </button>
+        </div>
+
+        <!-- News Form -->
+        <form action="/predict" method="POST" id="newsForm" onsubmit="return validateForm()">
+            <!-- News Article -->
+            <textarea id="newsText" name="text" placeholder="Paste or type a news article here (e.g. headline + report text)..." required></textarea>
+
+            <div class="input-guidance">
+                💡 <strong>Tip:</strong> News models analyze journalistic style and reporting context. For best accuracy, test with full news paragraphs (20+ words) rather than brief casual statements.
+            </div>
+
+            <!-- Buttons -->
+            <div class="buttons">
+                <button type="submit">
+                    CHECK NEWS
+                </button>
+
+                <button type="button" class="clear-btn" onclick="clearText()">
+                    CLEAR
+                </button>
+            </div>
+        </form>
+
+
+
+        <!-- Result / Error Container -->
+        <div id="result" class="result">
+        </div>
+
+        <!-- About -->
+        <div class="about">
+
+            <h2>About the Project</h2>
+
+            <p>
+                This Fake News Detection system uses Classical Natural
+                Language Processing techniques to analyze news articles.
+                TF-IDF converts text into numerical features and a
+                Logistic Regression machine learning model predicts
+                whether the news is REAL or FAKE.
+            </p>
+
+            <p style="margin-top: 10px;">
+                The model achieved approximately
+                <strong>97.4% accuracy</strong> on the test dataset.
+            </p>
+
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+</body>
+
+</html>
