@@ -17,7 +17,7 @@
         <h1>Analysis Result</h1>
 
         <p class="subtitle">
-            Natural Language Processing & Machine Learning Classification
+            Natural Language Processing &amp; Machine Learning Classification
         </p>
 
         {% if error %}
@@ -30,53 +30,92 @@
         {% else %}
 
         <!-- Result Card -->
-        <div class="result-card {% if prediction == 'REAL' %}result-real{% elif prediction == 'FAKE' %}result-fake{% else %}result-uncertain{% endif %}">
+        <div class="result-card {% if prediction == 'Real News' or prediction == 'REAL' %}result-real{% else %}result-fake{% endif %}">
 
+            <!-- Result Header with Clear Predicted Class -->
             <div class="result-header">
                 <div class="result-status">
-                    {% if prediction == 'REAL' %}
-                    ✅ REAL NEWS
-                    {% elif prediction == 'FAKE' %}
-                    ⚠️ FAKE NEWS
+                    {% if prediction == 'Real News' or prediction == 'REAL' %}
+                    ✅ Real News
                     {% else %}
-                    ⚖️ INCONCLUSIVE / UNCERTAIN
+                    ⚠️ Fake News
                     {% endif %}
                 </div>
-                <div class="confidence-badge {% if prediction == 'REAL' %}badge-real{% elif prediction == 'FAKE' %}badge-fake{% else %}badge-uncertain{% endif %}">
-                    {% if prediction == 'UNCERTAIN' %}
-                    Borderline ({{ confidence }}%)
-                    {% else %}
-                    {{ confidence }}% Confidence
-                    {% endif %}
+                {% if verdict_override %}
+                <div class="confidence-badge badge-fake">
+                    Factual Contradiction Override
                 </div>
+                {% else %}
+                <div class="confidence-badge {% if prediction == 'Real News' or prediction == 'REAL' %}badge-real{% else %}badge-fake{% endif %}">
+                    {{ confidence }}% Model Confidence
+                </div>
+                {% endif %}
+            </div>
+
+            {% if verdict_override %}
+            <div style="margin: 8px 0 14px; padding: 8px 12px; background: rgba(220, 38, 38, 0.1); border-radius: 6px; font-size: 13.5px; color: #b91c1c; font-weight: 500;">
+                ℹ️ <strong>System Note:</strong> Even though the text classifier detected a journalistic writing style ({{ ml_style_prediction }}), the overall verdict is classified as <strong>Fake News</strong> because the claim is contradicted by verified reference evidence.
+            </div>
+            {% endif %}
+
+            <!-- Source Type Badge -->
+            <div class="source-type-indicator">
+                <span class="source-pill">Input Source: <strong>{{ source_type or 'Custom News Article' }}</strong></span>
+                <span class="tokens-pill">Recognized Vocabulary Features: <strong>{{ vocab_matches }}</strong></span>
             </div>
 
             <!-- Probability Bar -->
             <div class="probability-section">
                 <div class="prob-labels">
-                    <span>Probabilities:</span>
+                    <span>Model Probability Distribution:</span>
                     <span>
-                        <strong class="real-text">Real: {{ real_probability }}%</strong> |
-                        <strong class="fake-text">Fake: {{ fake_probability }}%</strong>
+                        <strong class="real-text">Real News: {{ real_probability }}%</strong> |
+                        <strong class="fake-text">Fake News: {{ fake_probability }}%</strong>
                     </span>
                 </div>
                 <div class="prob-bar-container">
                     <div class="prob-bar-real" style="width: {{ real_probability }}%;"
-                        title="Real: {{ real_probability }}%"></div>
+                        title="Real News: {{ real_probability }}%"></div>
                     <div class="prob-bar-fake" style="width: {{ fake_probability }}%;"
-                        title="Fake: {{ fake_probability }}%"></div>
+                        title="Fake News: {{ fake_probability }}%"></div>
                 </div>
             </div>
 
-            <!-- Live News & Fact-Check Verification Card -->
+                                    <!-- Independent Factual Verification Layer -->
             {% if verified_info %}
-                {% if verified_info.type == 'VERIFIED' %}
-                <div class="verification-card verified-card">
+                {% if verified_info.status == 'Contradicted' or verified_info.type == 'CONTRADICTED' %}
+                <div class="verification-card contradicted-card">
                     <div class="verification-title">
-                        🌐 Real-World News Verification: Confirmed
+                        ❌ Claim Contradicted by Evidence
                     </div>
                     <p class="verification-desc">
-                        This story was cross-referenced and corroborated by reputable news coverage:
+                        {{ verified_info.explanation }}
+                    </p>
+                    <div class="source-match-box">
+                        <span class="source-tag contradicted-tag">{{ verified_info.source }}</span>
+                        <div class="source-headline">
+                            {% if verified_info.link %}
+                            <a href="{{ verified_info.link }}" target="_blank" rel="noopener noreferrer">
+                                "{{ verified_info.title }}" ↗
+                            </a>
+                            {% else %}
+                            "{{ verified_info.title }}"
+                            {% endif %}
+                        </div>
+                        {% if verified_info.evidence %}
+                        <div class="evidence-box">
+                            <strong>Verified Evidence:</strong> "{{ verified_info.evidence }}"
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% elif verified_info.status == 'Supported' or verified_info.type == 'SUPPORTED' or verified_info.type == 'VERIFIED' %}
+                <div class="verification-card verified-card">
+                    <div class="verification-title">
+                        ✅ Factual Verification: Supported
+                    </div>
+                    <p class="verification-desc">
+                        {{ verified_info.explanation }}
                     </p>
                     <div class="source-match-box">
                         <span class="source-tag">{{ verified_info.source }}</span>
@@ -89,18 +128,23 @@
                             "{{ verified_info.title }}"
                             {% endif %}
                         </div>
+                        {% if verified_info.evidence %}
+                        <div class="evidence-box">
+                            <strong>Verified Evidence:</strong> "{{ verified_info.evidence }}"
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
-                {% elif verified_info.type == 'DEBUNKED' %}
-                <div class="verification-card debunk-card">
+                {% elif verified_info.status == 'Mixed or Misleading' or verified_info.type == 'MIXED_OR_MISLEADING' %}
+                <div class="verification-card misleading-card">
                     <div class="verification-title">
-                        🚨 Fact-Check Warning: Debunked Hoax / False Claim
+                        ⚠️ Factual Verification: Mixed or Misleading
                     </div>
                     <p class="verification-desc">
-                        This claim has been investigated by professional fact-checkers and identified as false, misleading, or a viral hoax:
+                        {{ verified_info.explanation }}
                     </p>
                     <div class="source-match-box">
-                        <span class="source-tag debunk-tag">{{ verified_info.source }}</span>
+                        <span class="source-tag misleading-tag">{{ verified_info.source }}</span>
                         <div class="source-headline">
                             {% if verified_info.link %}
                             <a href="{{ verified_info.link }}" target="_blank" rel="noopener noreferrer">
@@ -110,36 +154,50 @@
                             "{{ verified_info.title }}"
                             {% endif %}
                         </div>
+                        {% if verified_info.evidence %}
+                        <div class="evidence-box">
+                            <strong>Reported Evidence:</strong> "{{ verified_info.evidence }}"
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="verification-card unverified-card">
+                    <div class="verification-title">
+                        ❓ Factual Verification: Unable to Verify
+                    </div>
+                    <p class="verification-desc">
+                        {{ verified_info.explanation }}
+                    </p>
+                    <div class="source-match-box">
+                        <span class="source-tag unverified-tag">Status: Unable to Verify</span>
+                        <div style="font-size: 13.5px; color: #555; margin-top: 4px;">
+                            No verified reference record or credible reporting could confirm or refute this claim. The system avoids guessing factual truth.
+                        </div>
                     </div>
                 </div>
                 {% endif %}
             {% endif %}
 
-            <!-- AI Insight / Diagnostic Notice -->
-            {% if not verified_info and (prediction == 'UNCERTAIN' or is_short_text) %}
-            <div class="notice-card">
-                <h4>🔍 Analysis Insight &amp; Limitations</h4>
-                {% if prediction == 'UNCERTAIN' %}
+            <!-- IMPORTANT: Model Limitations & Disclaimer Notice -->
+            <div class="model-disclaimer-box">
+                <h4>⚠️ Important Notice on Predictions &amp; Model Limitations</h4>
                 <p>
-                    <strong>Balanced Probabilities:</strong> The model's score is nearly split ({{ real_probability }}% Real vs {{ fake_probability }}% Fake). Neither class is dominant, so declaring it strictly "Real" or "Fake" would be unreliable.
+                    <strong>Statistical Pattern Detection:</strong> This classification is generated by a Logistic Regression model trained on historical news text features (TF-IDF). It identifies linguistic patterns, style, and vocabulary distributions rather than evaluating real-world facts.
                 </p>
-                {% endif %}
-                {% if is_short_text %}
                 <p>
-                    <strong>Short Input Notice ({{ word_count }} words):</strong> Machine learning fake news classifiers are trained on full news articles (100–500+ words). Short sentences lack journalistic structures, datelines, and context, which can distort probability scores.
+                    <strong>Predictions Can Be Wrong:</strong> The model does not achieve perfect accuracy. Articles about modern topics outside the training dataset (such as new technology, sports, or local events) or very brief statements can easily mislead the model.
                 </p>
-                {% endif %}
-                <p class="factcheck-disclaimer">
-                    💡 <em>Tip: For breaking or live events, the system cross-references major news publications. If no major media has reported on this statement, it relies on linguistic ML patterns.</em>
+                <p>
+                    <strong>Do Not Treat as Absolute Truth:</strong> A "Real News" or "Fake News" label from this model should never be taken as definitive proof of factual accuracy. Always verify important news through multiple credible news outlets and certified fact-checkers.
                 </p>
             </div>
-            {% endif %}
 
             <!-- News Snippet Container -->
             <div class="news-preview-box">
                 <h3>Analyzed News Text:</h3>
                 <p style="font-size: 0.9em; color: #555; margin-bottom: 10px;">
-                    Below is the text submitted for evaluation (Length: {{ word_count }} words | Model Features Recognized: {{ vocab_matches }}):
+                    Exact text submitted for evaluation (Length: {{ word_count }} words | Model Features Recognized: {{ vocab_matches }}):
                 </p>
                 <div class="news-preview-text">
                     {{ news_text }}

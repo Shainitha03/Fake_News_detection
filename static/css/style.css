@@ -501,10 +501,37 @@ button:active {
     background: #f0fdf4;
 }
 
+.contradicted-card {
+    border: 1.5px solid #fecaca;
+    border-left: 5px solid #dc2626;
+    background: #fef2f2;
+}
+
 .debunk-card {
     border: 1.5px solid #fecaca;
     border-left: 5px solid #ef4444;
     background: #fef2f2;
+}
+
+
+.misleading-card {
+    border: 1.5px solid #fed7aa;
+    border-left: 5px solid #f97316;
+    background: #fff7ed;
+}
+
+.misleading-card .verification-title {
+    color: #9a3412;
+}
+
+.misleading-tag {
+    background: #f97316;
+}
+
+.unverified-card {
+    border: 1.5px solid #e5e7eb;
+    border-left: 5px solid #9ca3af;
+    background: #f9fafb;
 }
 
 .verification-title {
@@ -517,8 +544,16 @@ button:active {
     color: #065f46;
 }
 
+.contradicted-card .verification-title {
+    color: #991b1b;
+}
+
 .debunk-card .verification-title {
     color: #991b1b;
+}
+
+.unverified-card .verification-title {
+    color: #374151;
 }
 
 .verification-desc {
@@ -551,8 +586,16 @@ button:active {
     border-radius: 12px;
 }
 
+.contradicted-tag {
+    background: #dc2626;
+}
+
 .debunk-tag {
     background: #ef4444;
+}
+
+.unverified-tag {
+    background: #6b7280;
 }
 
 .source-headline a {
@@ -568,6 +611,18 @@ button:active {
     color: #667eea;
     text-decoration: underline;
 }
+
+.evidence-box {
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #334155;
+    border-left: 3px solid #cbd5e1;
+    line-height: 1.45;
+}
+
 
 .probability-section {
     margin-top: 15px;
@@ -666,4 +721,181 @@ button:active {
     background: #fff3cd;
     color: #856404;
     border: 1px solid #ffeeba;
+}
+
+/* =========================================
+   Mode Tabs (Text vs URL)
+   ========================================= */
+
+.input-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 22px;
+    background: #f1f3f9;
+    padding: 6px;
+    border-radius: 12px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px 18px;
+    background: transparent;
+    border: none;
+    border-radius: 9px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.tab-btn:hover {
+    color: #333;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.tab-btn.active {
+    background: #ffffff;
+    color: #667eea;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* =========================================
+   Separate Section Cards & Action Buttons
+   ========================================= */
+
+
+.mode-panel {
+    animation: fadeIn 0.25s ease-in-out;
+}
+
+.section-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+}
+
+.section-header h2 {
+    font-size: 20px;
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+
+.section-desc {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.5;
+    margin-bottom: 18px;
+}
+
+.analyze-btn {
+    padding: 14px 28px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    transition: all 0.2s ease;
+}
+
+.analyze-btn:hover {
+    background: linear-gradient(135deg, #4338ca, #6d28d9);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.45);
+}
+
+.dataset-btn {
+    padding: 14px 28px;
+    background: #0284c7;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+    transition: all 0.2s ease;
+}
+
+.dataset-btn:hover {
+    background: #0369a1;
+    transform: translateY(-2px);
+}
+
+.about-disclaimer {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    border-radius: 6px;
+    font-size: 13.5px;
+    color: #92400e;
+    line-height: 1.5;
+}
+
+/* =========================================
+   Result Page Disclaimer & Source Indicators
+   ========================================= */
+
+.source-type-indicator {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.source-pill {
+    display: inline-block;
+    padding: 6px 14px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #334155;
+}
+
+.tokens-pill {
+    display: inline-block;
+    padding: 6px 14px;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 20px;
+    font-size: 13px;
+    color: #4338ca;
+}
+
+.model-disclaimer-box {
+    background: #fffbeb;
+    border: 1.5px solid #fde68a;
+    border-left: 6px solid #d97706;
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin: 24px 0;
+}
+
+.model-disclaimer-box h4 {
+    color: #92400e;
+    font-size: 15.5px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.model-disclaimer-box p {
+    font-size: 13.5px;
+    color: #78350f;
+    line-height: 1.55;
+    margin-bottom: 8px;
+}
+
+.model-disclaimer-box p:last-child {
+    margin-bottom: 0;
 }

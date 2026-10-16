@@ -14,68 +14,115 @@
 
     <div class="container">
 
-        <h1> Fake News Detection</h1>
+        <h1>Fake News Detection</h1>
 
         <p class="subtitle">
-            Detect misleading news using Natural Language Processing
-            and Machine Learning
+            Natural Language Processing and Machine Learning Classification
         </p>
 
-        <!-- Sample News Selection -->
-        <div class="sample-selection">
-            <select id="sampleDropdown" onchange="pasteSample()">
-                <option value="">-- Select a sample news article --</option>
-            </select>
-            <button type="button" onclick="loadNewSamples()">
-                Refresh Samples
+        <!-- Mode Navigation Tabs -->
+        <div class="input-tabs">
+            <button type="button" class="tab-btn active" id="tabCustomBtn" onclick="switchMainTab('custom')">
+                ✍️ Enter News Article
+            </button>
+            <button type="button" class="tab-btn" id="tabDatasetBtn" onclick="switchMainTab('dataset')">
+                📁 Select from Dataset
             </button>
         </div>
 
-        <!-- News Form -->
-        <form action="/predict" method="POST" id="newsForm" onsubmit="return validateForm()">
-            <!-- News Article -->
-            <textarea id="newsText" name="text" placeholder="Paste or type a news article here (e.g. headline + report text)..." required></textarea>
+        <!-- =========================================
+             SECTION 1: Enter News Article
+             ========================================= -->
+        <div id="customSection" class="mode-panel active-panel">
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>✍️ Enter News Article</h2>
+                    <p class="section-desc">
+                        Paste or type any news article, headline, or claim below.
+                        Click <strong>Analyze My News</strong> to evaluate the exact text with our trained Machine Learning model.
+                    </p>
+                </div>
 
-            <div class="input-guidance">
-                💡 <strong>Tip:</strong> News models analyze journalistic style and reporting context. For best accuracy, test with full news paragraphs (20+ words) rather than brief casual statements.
+                <form action="/predict" method="POST" id="customNewsForm" onsubmit="return validateCustomNewsForm()">
+                    <input type="hidden" name="source_type" value="Custom News Article" />
+
+                    <!-- Separate Text Area for Custom News -->
+                    <textarea id="customNewsText" name="text" placeholder="Paste or type your news article here (e.g., headline, reporting paragraphs, or claim)..." rows="8" required></textarea>
+
+                    <div class="input-guidance">
+                        💡 <strong>Tip:</strong> The model evaluates linguistic and vocabulary patterns learned from news datasets. For best reliability, provide complete paragraphs (20+ words).
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="buttons">
+                        <button type="submit" id="analyzeMyNewsBtn" class="analyze-btn">
+                            🔍 Analyze My News
+                        </button>
+
+                        <button type="button" class="clear-btn" onclick="clearCustomText()">
+                            CLEAR
+                        </button>
+                    </div>
+                </form>
             </div>
-
-            <!-- Buttons -->
-            <div class="buttons">
-                <button type="submit">
-                    CHECK NEWS
-                </button>
-
-                <button type="button" class="clear-btn" onclick="clearText()">
-                    CLEAR
-                </button>
-            </div>
-        </form>
-
-
-
-        <!-- Result / Error Container -->
-        <div id="result" class="result">
         </div>
 
-        <!-- About -->
+        <!-- =========================================
+             SECTION 2: Dataset-Based Prediction
+             ========================================= -->
+        <div id="datasetSection" class="mode-panel" style="display: none;">
+            <div class="section-card">
+                <div class="section-header">
+                    <h2>📁 Test With Dataset Articles</h2>
+                    <p class="section-desc">
+                        Select an article from our pre-loaded Fake and True news dataset to see how the model classifies it.
+                    </p>
+                </div>
+
+                <!-- Dataset Sample Dropdown -->
+                <div class="sample-selection">
+                    <select id="sampleDropdown" onchange="pasteSample()">
+                        <option value="">-- Select a sample news article from dataset --</option>
+                    </select>
+                    <button type="button" onclick="loadNewSamples()">
+                        🔄 Refresh Samples
+                    </button>
+                </div>
+
+                <form action="/predict" method="POST" id="datasetNewsForm" onsubmit="return validateDatasetForm()">
+                    <input type="hidden" name="source_type" value="Dataset Sample" />
+
+                    <!-- Dataset Text Area -->
+                    <textarea id="datasetNewsText" name="text" placeholder="Select an article from the dropdown above to view and predict its content..." rows="8" required></textarea>
+
+                    <div class="buttons">
+                        <button type="submit" id="predictDatasetBtn" class="dataset-btn">
+                            PREDICT DATASET NEWS
+                        </button>
+
+                        <button type="button" class="clear-btn" onclick="clearDatasetText()">
+                            CLEAR
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- About and Disclaimer Box -->
         <div class="about">
-
-            <h2>About the Project</h2>
-
+            <h2>About the Project &amp; Machine Learning Model</h2>
             <p>
-                This Fake News Detection system uses Classical Natural
-                Language Processing techniques to analyze news articles.
-                TF-IDF converts text into numerical features and a
-                Logistic Regression machine learning model predicts
-                whether the news is REAL or FAKE.
+                This system uses classical <strong>Natural Language Processing (NLP)</strong>.
+                Raw news articles are cleaned (lowercased, punctuation and stopwords removed, and stemmed with PorterStemmer).
+                Text is then vectorized using <strong>TF-IDF (50,000 unigram/bigram features)</strong>
+                and evaluated by a fitted <strong>Logistic Regression</strong> classifier.
             </p>
-
             <p style="margin-top: 10px;">
-                The model achieved approximately
-                <strong>97.4% accuracy</strong> on the test dataset.
+                The model achieved <strong>97.4% test accuracy</strong> on its training dataset (ISOT Fake &amp; True News).
             </p>
-
+            <div class="about-disclaimer">
+                ⚠️ <strong>Note:</strong> Predictions reflect statistical linguistic patterns from historical news data and should not be used as infallible factual verification. Unseen topics or brief sentences may produce incorrect classifications.
+            </div>
         </div>
 
     </div>

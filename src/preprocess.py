@@ -40,9 +40,20 @@ except Exception:
     stop_words = set()
 
 
+PUBLISHER_WATERMARKS = [
+    r'\b(?:reuters|ap|associated press|afp|bbc|cnn|nbc|cbs|fox news|the guardian|bloomberg)\b',
+    r'\b(?:featured image|image via|photo by|photo credit|via getty|getty images|shutterstock)\b',
+    r'\b(?:video below|watch the video|watch below|watch)\b',
+    r'\b(?:21st century wire|infowars|breitbart|daily caller|zerohedge|the gateway pundit)\b',
+    r'\b(?:click here|share this story|read more|source)\b'
+]
+
+
 def clean_text(text: str) -> str:
     """
-    Cleans raw news text using classical NLP preprocessing techniques.
+    Cleans raw news text using classical NLP preprocessing techniques,
+    removing publisher signatures and metadata artifacts to encourage genuine
+    linguistic feature learning.
     
     Args:
         text (str): Raw input news text or article.
@@ -62,14 +73,17 @@ def clean_text(text: str) -> str:
     # 3. Remove HTML tags
     text = re.sub(r'<.*?>', ' ', text)
 
-    # 4. Remove Reuters prefix patterns common in real news (e.g., "WASHINGTON (Reuters) - ")
-    # This prevents the model from relying purely on publisher watermarks.
-    text = re.sub(r'^.*?\([a-zA-Z\s]+\)\s*-\s*', ' ', text)
+    # 4. Remove standard journalistic datelines (e.g., "WASHINGTON (Reuters) - ")
+    text = re.sub(r'\b[a-zA-Z\s]{2,20}\s*\([a-zA-Z\s]+\)\s*[-–—]\s*', ' ', text)
 
-    # 5. Remove numbers, punctuation, and non-alphabetic characters
+    # 5. Remove known publisher watermarks and blog artifact metadata
+    for watermark in PUBLISHER_WATERMARKS:
+        text = re.sub(watermark, ' ', text, flags=re.IGNORECASE)
+
+    # 6. Remove numbers, punctuation, and non-alphabetic characters
     text = re.sub(r'[^a-zA-Z\s]', ' ', text)
 
-    # 6. Tokenize by whitespace, remove stopwords, and apply stemming
+    # 7. Tokenize by whitespace, remove stopwords, and apply stemming
     words = text.split()
     cleaned_words = [
         stemmer.stem(word) 
@@ -82,8 +96,8 @@ def clean_text(text: str) -> str:
 
 def load_and_prepare_dataset(fake_csv_path: str, true_csv_path: str, sample_size: int = None) -> pd.DataFrame:
     """
-    Loads Fake and True news CSVs, creates binary labels (0 = Fake, 1 = Real),
-    combines title + text, and shuffles the dataset.
+    Loads Fake and True news CSVs, removes duplicate articles to avoid data leakage,
+    creates binary labels (0 = Fake, 1 = Real), combines title + text, and shuffles.
     
     Args:
         fake_csv_path (str): Path to Fake.csv
@@ -98,10 +112,22 @@ def load_and_prepare_dataset(fake_csv_path: str, true_csv_path: str, sample_size
     if not os.path.exists(true_csv_path):
         raise FileNotFoundError(f"Could not find true news file at: {true_csv_path}")
 
-    # Load CSVs
     print("Loading Fake and True news datasets...")
     df_fake = pd.read_csv(fake_csv_path)
     df_true = pd.read_csv(true_csv_path)
+
+    # Clean missing values
+    df_fake['title'] = df_fake['title'].fillna('')
+    df_fake['text'] = df_fake['text'].fillna('')
+    df_true['title'] = df_true['title'].fillna('')
+    df_true['text'] = df_true['text'].fillna('')
+
+    # Deduplicate within each dataset before labeling
+    initial_fake = len(df_fake)
+    initial_true = len(df_true)
+    df_fake = df_fake.drop_duplicates(subset=['text']).drop_duplicates(subset=['title'])
+    df_true = df_true.drop_duplicates(subset=['text']).drop_duplicates(subset=['title'])
+    print(f"Deduplication: Fake reduced from {initial_fake} to {len(df_fake)} | True reduced from {initial_true} to {len(df_true)}")
 
     # Assign labels: 0 for Fake news, 1 for Real/True news
     df_fake['label'] = 0
@@ -116,19 +142,19 @@ def load_and_prepare_dataset(fake_csv_path: str, true_csv_path: str, sample_size
     # Combine datasets
     df = pd.concat([df_fake, df_true], ignore_index=True)
 
-    # Combine 'title' and 'text' columns into a single 'content' column
-    df['title'] = df['title'].fillna('')
-    df['text'] = df['text'].fillna('')
+    # Combine 'title' and 'text'
     df['content'] = df['title'] + " " + df['text']
 
     # Keep only content and label
     df = df[['content', 'label']].dropna()
+    df = df[df['content'].str.strip() != '']
 
     # Shuffle the dataset
     df = df.sample(frac=1, random_state=42).reset_index(drop=True)
 
-    print(f"Dataset prepared successfully! Total articles: {len(df)} (Fake: {sum(df['label'] == 0)}, Real: {sum(df['label'] == 1)})")
+    print(f"Dataset prepared successfully! Total unique articles: {len(df)} (Fake: {sum(df['label'] == 0)}, Real: {sum(df['label'] == 1)})")
     return df
+
 
 
 if __name__ == '__main__':

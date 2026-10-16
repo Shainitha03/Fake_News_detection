@@ -3,7 +3,7 @@ let currentSamples = [];
 function loadNewSamples() {
     const dropdown = document.getElementById("sampleDropdown");
     if (!dropdown) return;
-    dropdown.innerHTML = '<option value="">⏳ Loading sample news articles...</option>';
+    dropdown.innerHTML = '<option value="">⏳ Loading sample news articles from dataset...</option>';
 
     fetch("/samples_list")
         .then(response => {
@@ -29,13 +29,14 @@ function loadNewSamples() {
 function renderSamplesDropdown() {
     const dropdown = document.getElementById("sampleDropdown");
     if (!dropdown) return;
-    dropdown.innerHTML = '<option value="">-- Select a sample news article --</option>';
+    dropdown.innerHTML = '<option value="">-- Select a sample news article from dataset --</option>';
 
     currentSamples.forEach((sample, index) => {
         const option = document.createElement("option");
         option.value = index;
-        const shortTitle = sample.title.length > 80 ? sample.title.substring(0, 77) + "..." : sample.title;
-        option.textContent = `${index + 1}. ${shortTitle}`;
+        const tag = sample.category ? `[${sample.category}] ` : "";
+        const shortTitle = sample.title.length > 70 ? sample.title.substring(0, 67) + "..." : sample.title;
+        option.textContent = `${index + 1}. ${tag}${shortTitle}`;
         dropdown.appendChild(option);
     });
 }
@@ -43,35 +44,83 @@ function renderSamplesDropdown() {
 function pasteSample() {
     const dropdown = document.getElementById("sampleDropdown");
     const index = dropdown.value;
-    if (index !== "" && currentSamples[index]) {
-        document.getElementById("newsText").value = currentSamples[index].text;
+    const datasetTextArea = document.getElementById("datasetNewsText");
+    if (index !== "" && currentSamples[index] && datasetTextArea) {
+        datasetTextArea.value = currentSamples[index].text;
     }
+}
+
+function switchMainTab(mode) {
+    const tabCustomBtn = document.getElementById("tabCustomBtn");
+    const tabDatasetBtn = document.getElementById("tabDatasetBtn");
+
+    const customSection = document.getElementById("customSection");
+    const datasetSection = document.getElementById("datasetSection");
+
+    if (mode === "dataset") {
+        if (tabDatasetBtn) tabDatasetBtn.classList.add("active");
+        if (tabCustomBtn) tabCustomBtn.classList.remove("active");
+        if (datasetSection) datasetSection.style.display = "block";
+        if (customSection) customSection.style.display = "none";
+        const dropdown = document.getElementById("sampleDropdown");
+        if (dropdown && dropdown.options.length <= 1) {
+            loadNewSamples();
+        }
+    } else {
+        if (tabCustomBtn) tabCustomBtn.classList.add("active");
+        if (tabDatasetBtn) tabDatasetBtn.classList.remove("active");
+        if (customSection) customSection.style.display = "block";
+        if (datasetSection) datasetSection.style.display = "none";
+        const customText = document.getElementById("customNewsText");
+        if (customText) customText.focus();
+    }
+}
+
+function validateCustomNewsForm() {
+    const customText = document.getElementById("customNewsText");
+    const text = customText ? customText.value.trim() : "";
+
+    if (!text) {
+        alert("⚠️ Please paste or type your news article before clicking 'Analyze My News'.");
+        if (customText) customText.focus();
+        return false;
+    }
+
+    const form = document.getElementById("customNewsForm");
+    if (form) form.style.opacity = "0.6";
+    return true;
+}
+
+function validateDatasetForm() {
+    const datasetText = document.getElementById("datasetNewsText");
+    const text = datasetText ? datasetText.value.trim() : "";
+
+    if (!text) {
+        alert("⚠️ Please select an article from the dataset dropdown above or paste article text.");
+        if (datasetText) datasetText.focus();
+        return false;
+    }
+
+    const form = document.getElementById("datasetNewsForm");
+    if (form) form.style.opacity = "0.6";
+    return true;
+}
+
+function clearCustomText() {
+    const customText = document.getElementById("customNewsText");
+    if (customText) {
+        customText.value = "";
+        customText.focus();
+    }
+}
+
+function clearDatasetText() {
+    const datasetText = document.getElementById("datasetNewsText");
+    if (datasetText) datasetText.value = "";
+    const dropdown = document.getElementById("sampleDropdown");
+    if (dropdown) dropdown.value = "";
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     loadNewSamples();
 });
-
-function validateForm() {
-    const newsText = document.getElementById("newsText").value.trim();
-    if (!newsText) {
-        alert("⚠️ Please enter or load a news article.");
-        return false;
-    }
-    
-    // Optional: show some loading UI before page unloads
-    document.getElementById("newsForm").style.opacity = "0.5";
-    return true;
-}
-
-function clearText() {
-    document.getElementById("newsText").value = "";
-    const dropdown = document.getElementById("sampleDropdown");
-    if (dropdown) dropdown.value = "";
-
-    const result = document.getElementById("result");
-    if (result) {
-        result.style.display = "none";
-        result.innerHTML = "";
-    }
-}

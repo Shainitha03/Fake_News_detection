@@ -65,16 +65,27 @@ def train_fake_news_model(
     )
     print(f"-> Training samples: {len(X_train)} | Testing samples: {len(X_test)}")
 
-    # 4. TF-IDF Feature Extraction
-    print(f"\n[Step 4/5] Extracting TF-IDF features (max_features={max_features}, ngram_range=(1, 2))...")
-    tfidf = TfidfVectorizer(max_features=max_features, ngram_range=(1, 2))
+    # 4. TF-IDF Feature Extraction with sublinear term frequency
+    print(f"\n[Step 4/5] Extracting TF-IDF features (max_features={max_features}, ngram_range=(1, 2), sublinear_tf=True)...")
+    tfidf = TfidfVectorizer(
+        max_features=max_features, 
+        ngram_range=(1, 2),
+        sublinear_tf=True,
+        min_df=2
+    )
     X_train_tfidf = tfidf.fit_transform(X_train)
     X_test_tfidf = tfidf.transform(X_test)
     print(f"-> TF-IDF Vocabulary Size: {len(tfidf.vocabulary_)} features")
 
-    # 5. Model Training (Logistic Regression)
+    # 5. Model Training (Logistic Regression with balanced weighting)
     print("\n[Step 5/5] Training Logistic Regression Classifier...")
-    model = LogisticRegression(C=1.0, max_iter=1000, random_state=42, solver='lbfgs')
+    model = LogisticRegression(
+        C=1.0, 
+        max_iter=1000, 
+        random_state=42, 
+        solver='lbfgs',
+        class_weight='balanced'
+    )
     model.fit(X_train_tfidf, y_train)
 
     # Evaluation
@@ -134,5 +145,7 @@ def train_fake_news_model(
 
 
 if __name__ == '__main__':
-    train_fake_news_model(sample_size=10000)
+    # Train with 24,000 deduplicated samples (balanced 12k Real + 12k Fake)
+    train_fake_news_model(sample_size=24000)
+
 
