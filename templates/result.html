@@ -32,29 +32,59 @@
         <!-- Result Card -->
         <div class="result-card {% if prediction == 'Real News' or prediction == 'REAL' %}result-real{% else %}result-fake{% endif %}">
 
-            <!-- Result Header with Clear Predicted Class -->
-            <div class="result-header">
-                <div class="result-status">
-                    {% if prediction == 'Real News' or prediction == 'REAL' %}
-                    ✅ Real News
-                    {% else %}
-                    ⚠️ Fake News
-                    {% endif %}
+            <!-- Primary Required Prediction & Verification Format Banner (Requirement 10) -->
+            <div class="analysis-verdict-banner {% if prediction == 'Real News' or prediction == 'REAL' %}banner-real{% else %}banner-fake{% endif %}">
+                <div class="verdict-banner-row">
+                    <span class="banner-label">Prediction:</span>
+                    <span class="banner-value">
+                        {% if prediction == 'Real News' or prediction == 'REAL' %}
+                        🟢 REAL NEWS
+                        {% else %}
+                        🔴 FAKE NEWS
+                        {% endif %}
+                    </span>
                 </div>
-                {% if verdict_override %}
-                <div class="confidence-badge badge-fake">
-                    Factual Contradiction Override
+                <div class="verdict-banner-row">
+                    <span class="banner-label">Factual Verification:</span>
+                    <span class="verification-badge-status status-{{ factual_verification|lower }}">
+                        {{ factual_verification }}
+                    </span>
                 </div>
-                {% else %}
-                <div class="confidence-badge {% if prediction == 'Real News' or prediction == 'REAL' %}badge-real{% else %}badge-fake{% endif %}">
-                    {{ confidence }}% Model Confidence
+                <div class="verdict-banner-row">
+                    <span class="banner-label">Reason:</span>
+                    <span class="banner-reason">{{ reason }}</span>
                 </div>
-                {% endif %}
             </div>
 
-            {% if verdict_override %}
-            <div style="margin: 8px 0 14px; padding: 8px 12px; background: rgba(220, 38, 38, 0.1); border-radius: 6px; font-size: 13.5px; color: #b91c1c; font-weight: 500;">
-                ℹ️ <strong>System Note:</strong> Even though the text classifier detected a journalistic writing style ({{ ml_style_prediction }}), the overall verdict is classified as <strong>Fake News</strong> because the claim is contradicted by verified reference evidence.
+            <!-- Result Header with Model Confidence & Style Breakdown -->
+            <div class="result-header" style="margin-top: 18px;">
+                <div class="result-status">
+                    Model Assessment: <strong>{{ prediction }}</strong>
+                </div>
+                <div class="confidence-badge {% if prediction == 'Real News' or prediction == 'REAL' %}badge-real{% else %}badge-fake{% endif %}">
+                    {{ confidence }}% Statistical Confidence
+                </div>
+            </div>
+
+            {% if disagreement_explanation %}
+            <!-- Requirement 10: Model vs Factual Disagreement Displayed Separately -->
+            <div class="disagreement-card">
+                <div class="disagreement-title">
+                    ⚠️ Model &amp; Factual Verification Disagreement
+                </div>
+                <p class="disagreement-text">
+                    {{ disagreement_explanation }}
+                </p>
+                <div class="disagreement-breakdown">
+                    <div class="breakdown-item">
+                        <span class="breakdown-pill ml-pill">Statistical ML Classifier: <strong>{{ ml_style_prediction }}</strong></span>
+                        <small>Evaluates linguistic vocabulary distributions and historical article styling.</small>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="breakdown-pill fact-pill">Factual Verification: <strong>{{ factual_verification }}</strong></span>
+                        <small>Evaluates official government records, encyclopedic sources, and credible feeds.</small>
+                    </div>
+                </div>
             </div>
             {% endif %}
 
@@ -67,7 +97,7 @@
             <!-- Probability Bar -->
             <div class="probability-section">
                 <div class="prob-labels">
-                    <span>Model Probability Distribution:</span>
+                    <span>Machine-Learning Linguistic Distribution:</span>
                     <span>
                         <strong class="real-text">Real News: {{ real_probability }}%</strong> |
                         <strong class="fake-text">Fake News: {{ fake_probability }}%</strong>
@@ -81,7 +111,7 @@
                 </div>
             </div>
 
-                                    <!-- Independent Factual Verification Layer -->
+            <!-- Independent Factual Verification Layer -->
             {% if verified_info %}
                 {% if verified_info.status == 'Contradicted' or verified_info.type == 'CONTRADICTED' %}
                 <div class="verification-card contradicted-card">
@@ -172,7 +202,7 @@
                     <div class="source-match-box">
                         <span class="source-tag unverified-tag">Status: Unable to Verify</span>
                         <div style="font-size: 13.5px; color: #555; margin-top: 4px;">
-                            No verified reference record or credible reporting could confirm or refute this claim. The system avoids guessing factual truth.
+                            Unable to verify this claim with the available evidence. The system avoids guessing factual truth.
                         </div>
                     </div>
                 </div>

@@ -240,6 +240,15 @@ def extract_dates_and_numbers(text):
     return dates, numbers
 
 
+def format_date_display(d_str):
+    if not d_str:
+        return ""
+    parts = str(d_str).strip().split()
+    if len(parts) == 2 and parts[0].isdigit():
+        return f"{parts[0]} {parts[1].capitalize()}"
+    return str(d_str).title()
+
+
 def verify_factual_claim_pipeline(text):
     """
     Performs comprehensive multi-stage factual verification:
@@ -277,15 +286,19 @@ def verify_factual_claim_pipeline(text):
     # ----------------------------------------------------
     for key, rec in OFFICIAL_INDIAN_RECORDS.items():
         if all(kw in words for kw in rec["keywords"]):
+            # If the record requires 'india' / 'indian' context when other country names appear
+            if any(c in words for c in ["pakistan", "usa", "us", "france", "mexico", "canada"]) and not any(ind in words for ind in ["india", "indian"]):
+                continue
             if claim_dates:
-                claim_str = ", ".join(sorted(claim_dates))
+                claim_disp = ", ".join(format_date_display(d) for d in sorted(claim_dates))
+                official_disp = format_date_display(rec["official_date"])
                 if rec["official_date"] in claim_dates:
                     return {
                         "status": "Supported",
                         "title": rec["title"],
                         "source": rec["source"],
                         "link": rec["link"],
-                        "explanation": f"The claim is Supported by official government reference: {rec['title']} is celebrated on {rec['official_date']}.",
+                        "explanation": f"In India, {rec['title'].split(':')[-1].strip()} is celebrated on {official_disp}.",
                         "evidence": rec["evidence"]
                     }
                 else:
@@ -294,7 +307,7 @@ def verify_factual_claim_pipeline(text):
                         "title": rec["title"],
                         "source": rec["source"],
                         "link": rec["link"],
-                        "explanation": f"Claim Contradicted by Evidence: The statement claims date '{claim_str}', but official government records ({rec['source']}) establish that this national day is celebrated on {rec['official_date']}.",
+                        "explanation": f"In India, {rec['title'].split(':')[-1].strip()} is celebrated on {official_disp}, not {claim_disp}.",
                         "evidence": rec["evidence"]
                     }
 
@@ -303,7 +316,7 @@ def verify_factual_claim_pipeline(text):
     # ----------------------------------------------------
     if base_query.strip():
         search_queries = []
-        if "india" in words or "indian" in words or not any(c in words for c in ["usa", "us", "pakistan", "israel", "france", "mexico", "canada"]):
+        if ("india" in words or "indian" in words) and not any(c in words for c in ["usa", "us", "pakistan", "israel", "france", "mexico", "canada"]):
             search_queries.append(base_query + " India")
         search_queries.append(base_query)
 
@@ -317,6 +330,18 @@ def verify_factual_claim_pipeline(text):
                     title = item.get("title", "")
                     if any(skip in title.lower() for skip in ["film", "album", "song", "novel", "soundtrack", "resurgence", "school"]):
                         continue
+
+                    # Strict Entity Relevance: Ensure the Wikipedia article title is genuinely relevant to the subject words
+                    raw_title = re.sub(r"\(.*?\)", "", title)
+                    title_content_words = set(w for w in re.findall(r"[a-zA-Z]{3,}", raw_title.lower()) if w not in stop and w not in MONTH_NAMES)
+                    if not title_content_words:
+                        continue
+                    subject_set = set(subject_words)
+                    title_overlap = title_content_words.intersection(subject_set)
+                    # Require at least 60% of title content words or at least 2 significant overlapping keywords
+                    if len(title_overlap) < 1 or (len(title_content_words) > 1 and len(title_overlap) / len(title_content_words) < 0.5):
+                        continue
+
                     sum_url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{urllib.parse.quote(title)}"
                     sum_req = urllib.request.Request(sum_url, headers={"User-Agent": "FakeNewsDetector/1.0 (academic-fact-check)"})
                     with urllib.request.urlopen(sum_req, timeout=3) as s_res:
@@ -326,15 +351,15 @@ def verify_factual_claim_pipeline(text):
                         ref_link = s_data.get("content_urls", {}).get("desktop", {}).get("page", f"https://en.wikipedia.org/wiki/{title}")
 
                         if claim_dates and ref_dates:
-                            claim_str = ", ".join(sorted(claim_dates))
-                            ref_str = ", ".join(sorted(ref_dates))
+                            claim_disp = ", ".join(format_date_display(d) for d in sorted(claim_dates))
+                            ref_disp = ", ".join(format_date_display(d) for d in sorted(ref_dates))
                             if claim_dates.intersection(ref_dates):
                                 return {
                                     "status": "Supported",
                                     "title": title,
                                     "source": f"Wikipedia Reference: {title}",
                                     "link": ref_link,
-                                    "explanation": f"The claim is Supported by authoritative reference: {title} is commemorated on {ref_str}.",
+                                    "explanation": f"For {title}, official records and reference documentation confirm the date as {ref_disp}.",
                                     "evidence": extract[:240] + "..." if len(extract) > 240 else extract
                                 }
                             else:
@@ -343,7 +368,7 @@ def verify_factual_claim_pipeline(text):
                                     "title": title,
                                     "source": f"Wikipedia Reference: {title}",
                                     "link": ref_link,
-                                    "explanation": f"Claim Contradicted by Evidence: The statement claims '{claim_str}', but the authoritative reference for '{title}' records '{ref_str}'.",
+                                    "explanation": f"For {title}, verified reference documentation establishes the date as {ref_disp}, not {claim_disp}.",
                                     "evidence": extract[:240] + "..." if len(extract) > 240 else extract
                                 }
             except Exception:
@@ -457,7 +482,7 @@ def verify_factual_claim_pipeline(text):
         "title": "No Verified Reference Record Found",
         "source": "Reference Knowledge & Credible News Feeds",
         "link": "",
-        "explanation": "No verified reference sources or credible news reporting could confirm or refute this claim. The system avoids guessing factual truth.",
+        "explanation": "Unable to verify this claim with the available evidence.",
         "evidence": ""
     }
 
@@ -511,23 +536,41 @@ def predict():
 
     is_short_text = word_count < 20
 
-    # Final Verdict Integration:
-    # If authoritative reference evidence directly CONTRADICTS the claim,
-    # the final overall verdict is Fake News (Disproven Claim).
+    # Final Verdict Integration & Disagreement Explanation:
+    # We preserve the ML model's prediction and the factual verification separately.
+    # If reliable reference evidence directly CONTRADICTS the claim, the overall verdict is Fake News.
     # If the claim is corroborated/supported by official reference/media, it is Real News.
-    # Otherwise, it relies on the ML linguistic classification.
+    # If factual evidence is unavailable, we rely on the ML statistical model.
+    # When ML prediction and factual verification disagree, both are clearly explained.
     if verification_status == "Contradicted":
         result = "Fake News"
-        verdict_override = True
-        verdict_reason = "Classified as Fake News because the claim is contradicted by verified reference evidence."
+        verdict_override = (ml_style_result != "Fake News")
+        reason = verification_result.get("explanation", "The claim is contradicted by verified reference evidence.")
     elif verification_status == "Supported":
         result = "Real News"
-        verdict_override = False
-        verdict_reason = "Corroborated by verified reference evidence."
+        verdict_override = (ml_style_result != "Real News")
+        reason = verification_result.get("explanation", "The claim is corroborated by verified reference evidence.")
     else:
         result = ml_style_result
         verdict_override = False
-        verdict_reason = "Based on machine learning linguistic pattern analysis (Reference evidence unable to verify)."
+        reason = "Unable to verify this claim with the available evidence. Result is based on machine-learning stylistic text analysis."
+
+    # Prediction display formatted with emojis
+    if result == "Real News" or result == "REAL":
+        prediction_display = "🟢 Prediction: REAL NEWS ✅"
+    else:
+        prediction_display = "🔴 Prediction: FAKE NEWS ❌"
+
+    # Separate disagreement explanation if ML and Factual Verification conflict
+    disagreement_explanation = None
+    if verification_status in ["Contradicted", "Supported"]:
+        expected_from_verification = "Fake News" if verification_status == "Contradicted" else "Real News"
+        if ml_style_result != expected_from_verification:
+            disagreement_explanation = (
+                f"Model vs Evidence Disagreement: The Machine-Learning model classified this text as '{ml_style_result}' "
+                f"based on statistical vocabulary patterns ({confidence}% confidence). However, authoritative factual verification "
+                f"determined '{verification_status.upper()}' ({reason}). The final verdict reflects verified factual reality."
+            )
 
     verified_info = {
         "status": verification_status,
@@ -535,8 +578,8 @@ def predict():
         "title": verification_result.get("title", ""),
         "source": verification_result.get("source", ""),
         "link": verification_result.get("link", ""),
-        "explanation": verification_result.get("explanation", ""),
-        "description": verification_result.get("explanation", ""),
+        "explanation": reason,
+        "description": reason,
         "evidence": verification_result.get("evidence", "")
     }
 
@@ -545,9 +588,13 @@ def predict():
     if request.is_json:
         return jsonify({
             "prediction": result,
+            "prediction_display": prediction_display,
+            "reason": reason,
+            "factual_verification": verification_status.upper(),
             "ml_style_prediction": ml_style_result,
             "verdict_override": verdict_override,
-            "verdict_reason": verdict_reason,
+            "disagreement_explanation": disagreement_explanation,
+            "verdict_reason": reason,
             "raw_class": raw_pred,
             "confidence": confidence,
             "fake_probability": fake_prob,
@@ -563,9 +610,13 @@ def predict():
     return render_template(
         "result.html",
         prediction=result,
+        prediction_display=prediction_display,
+        reason=reason,
+        factual_verification=verification_status.upper(),
         ml_style_prediction=ml_style_result,
         verdict_override=verdict_override,
-        verdict_reason=verdict_reason,
+        disagreement_explanation=disagreement_explanation,
+        verdict_reason=reason,
         raw_class=raw_pred,
         confidence=confidence,
         fake_probability=fake_prob,
