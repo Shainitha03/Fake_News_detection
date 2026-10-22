@@ -104,13 +104,19 @@
 
                     {% if verified_info and (verified_info.evidence or verified_info.source) %}
                     <div class="evidence-quote-box">
-                        <div class="evidence-quote-label">Authoritative Fact Reference:</div>
+                        <div class="evidence-quote-label">
+                            {% if verified_info.status == 'Supported' or verified_info.status == 'Contradicted' %}
+                            Authoritative Fact Reference:
+                            {% else %}
+                            Corroborating Evidence &amp; Attributions:
+                            {% endif %}
+                        </div>
                         {% if verified_info.evidence %}
                         <blockquote class="evidence-quote">"{{ verified_info.evidence }}"</blockquote>
                         {% endif %}
                         {% if verified_info.source %}
                         <div class="evidence-source-meta">
-                            <strong>Source:</strong> {{ verified_info.source }}
+                            <strong>Source / Attribution:</strong> {{ verified_info.source }}
                         </div>
                         {% endif %}
                         {% if verified_info.link %}

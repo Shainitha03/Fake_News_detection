@@ -428,11 +428,12 @@ function renderLiveResult(data, originalText) {
     let evidenceHtml = "";
     if (data.verified_info && (data.verified_info.evidence || data.verified_info.source)) {
         const info = data.verified_info;
+        const isFactRef = (info.status === 'Supported' || info.status === 'Contradicted');
         evidenceHtml = `
             <div class="evidence-quote-box">
-                <div class="evidence-quote-label">Authoritative Fact Reference:</div>
+                <div class="evidence-quote-label">${isFactRef ? 'Authoritative Fact Reference:' : 'Corroborating Evidence &amp; Attributions:'}</div>
                 ${info.evidence ? `<blockquote class="evidence-quote">"${escapeHtml(info.evidence)}"</blockquote>` : ""}
-                ${info.source ? `<div class="evidence-source-meta"><strong>Source:</strong> ${escapeHtml(info.source)}</div>` : ""}
+                ${info.source ? `<div class="evidence-source-meta"><strong>Source / Attribution:</strong> ${escapeHtml(info.source)}</div>` : ""}
                 ${info.link ? `<div style="margin-top: 8px;"><a href="${info.link}" target="_blank" rel="noopener noreferrer" class="evidence-source-link">View Reference Document ↗</a></div>` : ""}
             </div>
         `;
