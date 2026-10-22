@@ -49,10 +49,10 @@
             <!-- Clean, Compact Hero -->
             <section class="hero-content">
                 <h1 class="hero-title">
-                    Fake News &amp; <span class="gradient-text">Credibility Detector</span>
+                    AI Fake News &amp; <span class="gradient-text">Credibility Verifier</span>
                 </h1>
                 <p class="hero-desc">
-                    Evaluate articles with TF-IDF statistical machine learning and live reference verification.
+                    Type or paste any news article, headline, or viral claim to evaluate credibility with AI neural analysis and live global fact-check verification.
                 </p>
             </section>
         </header>
@@ -61,7 +61,7 @@
         <nav class="mode-tabs-wrapper" aria-label="System Navigation">
             <div class="mode-tabs-container">
                 <button type="button" class="nav-tab-btn active" id="tab-custom-btn" onclick="switchMainTab('custom')">
-                    ✍️ Detector
+                    🤖 AI Detector
                 </button>
                 <button type="button" class="nav-tab-btn" id="tab-dataset-btn" onclick="switchMainTab('dataset')">
                     📁 Benchmark Samples
@@ -108,7 +108,7 @@
                             id="customNewsText" 
                             name="text" 
                             class="custom-textarea" 
-                            placeholder="Type or paste any news article, headline, or statement here to check credibility..." 
+                            placeholder="Type or paste any news article, headline, or claim here to check if it's Real or Fake using AI... (Press Ctrl + Enter to analyze)" 
                             required></textarea>
 
                         <!-- Subtle Bottom Tools Bar inside the Input Box -->
@@ -132,7 +132,7 @@
                                     Clear
                                 </button>
                                 <button type="button" id="analyzeBtn" class="btn btn-primary" onclick="runInstantAnalysis(event)">
-                                    🔍 Analyze Credibility
+                                    ⚡ Analyze with AI
                                 </button>
                             </div>
                         </div>

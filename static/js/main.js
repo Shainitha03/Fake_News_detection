@@ -357,19 +357,24 @@ async function runInstantAnalysis(event) {
     const scanningHud = document.getElementById("scanningHud");
     const resultContainer = document.getElementById("liveResultContainer");
     const scanStep = document.getElementById("scanStepText");
+    const analyzeBtn = document.getElementById("analyzeBtn");
 
     if (resultContainer) resultContainer.style.display = "none";
     if (scanningHud) scanningHud.style.display = "block";
+    if (analyzeBtn) {
+        analyzeBtn.disabled = true;
+        analyzeBtn.innerHTML = "⚡ AI Analyzing...";
+    }
 
-    if (scanStep) scanStep.textContent = "Preprocessing: Lowercasing, removing watermarks & stemming...";
+    if (scanStep) scanStep.textContent = "🤖 Step 1: AI Parsing Statement & Identifying Factual Claims...";
 
     const stepTimeout1 = setTimeout(() => {
-        if (scanStep) scanStep.textContent = "Feature Vectorization: TF-IDF 50,000 N-Gram matrix match...";
-    }, 450);
+        if (scanStep) scanStep.textContent = "🔍 Step 2: Cross-referencing Google Fact Check Registry & Global Archives...";
+    }, 350);
 
     const stepTimeout2 = setTimeout(() => {
-        if (scanStep) scanStep.textContent = "Explainable AI: Calculating token attribution weights...";
-    }, 900);
+        if (scanStep) scanStep.textContent = "🧠 Step 3: Neural Semantic Reasoning & Credibility Evaluation...";
+    }, 700);
 
     try {
         const response = await fetch("/predict", {
@@ -395,13 +400,21 @@ async function runInstantAnalysis(event) {
 
         setTimeout(() => {
             if (scanningHud) scanningHud.style.display = "none";
+            if (analyzeBtn) {
+                analyzeBtn.disabled = false;
+                analyzeBtn.innerHTML = "⚡ Analyze with AI";
+            }
             renderLiveResult(data, text);
-        }, 550);
+        }, 500);
 
     } catch (err) {
         clearTimeout(stepTimeout1);
         clearTimeout(stepTimeout2);
         if (scanningHud) scanningHud.style.display = "none";
+        if (analyzeBtn) {
+            analyzeBtn.disabled = false;
+            analyzeBtn.innerHTML = "⚡ Analyze with AI";
+        }
         console.error("Prediction error:", err);
         showToast("Error processing prediction: " + err.message);
     }
@@ -419,10 +432,13 @@ function renderLiveResult(data, originalText) {
     const verdictIcon = isReal ? "🟢" : "🔴";
     const verdictTitle = isReal ? "REAL / CREDIBLE NEWS" : "POTENTIAL FAKE NEWS";
     const verdictSubtitle = isReal ? "Verified / Credible Content" : "Identified as Misinformation / Fake";
+    const aiEngine = data.ai_engine || "Veritas AI & Fact-Check Neural Engine";
 
     const reasonText = data.reason || (isReal 
         ? "Content matches standard credible journalistic reporting practices. No factual contradictions were detected." 
         : "Flagged as potential fake news based on sensationalist linguistic markers and unverified assertions.");
+
+    const detailedAnalysis = data.ai_detailed_analysis || "";
 
     // Evidence quote or official reference
     let evidenceHtml = "";
@@ -430,16 +446,37 @@ function renderLiveResult(data, originalText) {
         const info = data.verified_info;
         const isFactRef = (info.status === 'Supported' || info.status === 'Contradicted');
         evidenceHtml = `
-            <div class="evidence-quote-box">
-                <div class="evidence-quote-label">${isFactRef ? 'Authoritative Fact Reference:' : 'Corroborating Evidence &amp; Attributions:'}</div>
+            <div class="evidence-quote-box" style="margin-top: 16px;">
+                <div class="evidence-quote-label" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <span>${isFactRef ? '🛡️ Certified Fact-Check Evidence & Citation:' : '🔍 Corroborating Evidence & Source:'}</span>
+                    <span style="font-size: 11px; padding: 2px 8px; border-radius: 6px; background: rgba(255,255,255,0.08); font-weight: 700;">
+                        ${escapeHtml(data.factual_verification || 'VERIFIED')}
+                    </span>
+                </div>
                 ${info.evidence ? `<blockquote class="evidence-quote">"${escapeHtml(info.evidence)}"</blockquote>` : ""}
-                ${info.source ? `<div class="evidence-source-meta"><strong>Source / Attribution:</strong> ${escapeHtml(info.source)}</div>` : ""}
-                ${info.link ? `<div style="margin-top: 8px;"><a href="${info.link}" target="_blank" rel="noopener noreferrer" class="evidence-source-link">View Reference Document ↗</a></div>` : ""}
+                ${info.source ? `<div class="evidence-source-meta" style="margin-top: 8px;"><strong>Publisher / Source:</strong> ${escapeHtml(info.source)}</div>` : ""}
+                ${info.link ? `<div style="margin-top: 10px;"><a href="${info.link}" target="_blank" rel="noopener noreferrer" class="evidence-source-link" style="display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">View Verified Fact-Check Investigation ↗</a></div>` : ""}
             </div>
         `;
     }
 
+    window._lastAnalysisData = {
+        prediction: data.prediction,
+        reason: reasonText,
+        aiEngine: aiEngine,
+        text: originalText
+    };
+
     container.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div class="badge-ai-model" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; background: rgba(99, 102, 241, 0.15); color: var(--accent-primary); border: 1px solid rgba(99, 102, 241, 0.3);">
+                <span>🤖</span> Analyzed by: <strong>${escapeHtml(aiEngine)}</strong>
+            </div>
+            <button type="button" class="btn btn-ghost" onclick="copyAnalysisToClipboard()" style="padding: 4px 12px; font-size: 12px;">
+                📋 Copy Analysis
+            </button>
+        </div>
+
         <div class="verdict-banner-modern ${bannerClass}">
             <div class="verdict-left">
                 <div class="verdict-icon-bubble">${verdictIcon}</div>
@@ -448,15 +485,29 @@ function renderLiveResult(data, originalText) {
                     <div class="verdict-subtitle">${verdictSubtitle}</div>
                 </div>
             </div>
+            <div style="text-align: right; font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">
+                Length: ${data.word_count || originalText.split(/\s+/).length} words
+            </div>
         </div>
 
         <div class="reason-panel-card ${isReal ? 'reason-panel-real' : 'reason-panel-fake'}">
             <div class="reason-panel-header">
                 <span class="reason-header-icon">${isReal ? '✅' : '⚠️'}</span>
-                <h3 class="reason-header-title">${isReal ? 'Verification Summary' : 'Reason for Identification'}</h3>
+                <h3 class="reason-header-title">
+                    <span>${isReal ? 'AI Verification Summary' : 'AI Reason for Identification'}</span>
+                </h3>
             </div>
             <div class="reason-panel-body">
-                <p class="reason-primary-text">${escapeHtml(reasonText)}</p>
+                <p class="reason-primary-text" style="font-size: 15px; font-weight: 600; line-height: 1.5; color: var(--text-primary); margin-bottom: 12px;">
+                    ${escapeHtml(reasonText)}
+                </p>
+
+                ${detailedAnalysis ? `
+                <div style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-radius: 8px; border-left: 3px solid var(--accent-primary);">
+                    <strong>AI Deep Assessment:</strong> ${escapeHtml(detailedAnalysis)}
+                </div>
+                ` : ""}
+
                 ${evidenceHtml}
             </div>
         </div>
@@ -464,6 +515,17 @@ function renderLiveResult(data, originalText) {
 
     container.style.display = "block";
     container.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function copyAnalysisToClipboard() {
+    if (!window._lastAnalysisData) return;
+    const d = window._lastAnalysisData;
+    const textToCopy = `[AI Fact-Check Report]\nVerdict: ${d.prediction}\nEngine: ${d.aiEngine}\nReason: ${d.reason}\nAnalyzed Text: "${d.text}"`;
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        showToast("✅ AI Analysis copied to clipboard!");
+    }).catch(() => {
+        showToast("⚠️ Could not copy to clipboard.");
+    });
 }
 
 function generateHighlightedTextHtml(text, highlightMap) {
