@@ -375,6 +375,51 @@ MAJOR_LOCATIONS = {
     "mumbai", "kolkata", "chennai", "bangalore", "bengaluru", "hyderabad", "chicago"
 }
 
+OFFICIAL_OFFICES_AND_HOLDERS = {
+    ("prime minister", "india"): ("Narendra Modi", "https://en.wikipedia.org/wiki/Prime_Minister_of_India"),
+    ("pm", "india"): ("Narendra Modi", "https://en.wikipedia.org/wiki/Prime_Minister_of_India"),
+    ("president", "india"): ("Droupadi Murmu", "https://en.wikipedia.org/wiki/President_of_India"),
+    ("president", "united states"): ("Joe Biden", "https://en.wikipedia.org/wiki/President_of_the_United_States"),
+    ("president", "usa"): ("Joe Biden", "https://en.wikipedia.org/wiki/President_of_the_United_States"),
+    ("president", "us"): ("Joe Biden", "https://en.wikipedia.org/wiki/President_of_the_United_States"),
+    ("president", "france"): ("Emmanuel Macron", "https://en.wikipedia.org/wiki/President_of_France"),
+    ("president", "russia"): ("Vladimir Putin", "https://en.wikipedia.org/wiki/President_of_Russia"),
+    ("prime minister", "uk"): ("Keir Starmer", "https://en.wikipedia.org/wiki/Prime_Minister_of_the_United_Kingdom"),
+    ("pm", "uk"): ("Keir Starmer", "https://en.wikipedia.org/wiki/Prime_Minister_of_the_United_Kingdom"),
+    ("prime minister", "united kingdom"): ("Keir Starmer", "https://en.wikipedia.org/wiki/Prime_Minister_of_the_United_Kingdom"),
+    ("ceo", "google"): ("Sundar Pichai", "https://en.wikipedia.org/wiki/Sundar_Pichai"),
+    ("ceo", "alphabet"): ("Sundar Pichai", "https://en.wikipedia.org/wiki/Sundar_Pichai"),
+    ("ceo", "microsoft"): ("Satya Nadella", "https://en.wikipedia.org/wiki/Satya_Nadella"),
+    ("ceo", "apple"): ("Tim Cook", "https://en.wikipedia.org/wiki/Tim_Cook"),
+    ("ceo", "tesla"): ("Elon Musk", "https://en.wikipedia.org/wiki/Elon_Musk"),
+    ("ceo", "spacex"): ("Elon Musk", "https://en.wikipedia.org/wiki/Elon_Musk"),
+    ("ceo", "meta"): ("Mark Zuckerberg", "https://en.wikipedia.org/wiki/Mark_Zuckerberg"),
+    ("ceo", "facebook"): ("Mark Zuckerberg", "https://en.wikipedia.org/wiki/Mark_Zuckerberg"),
+    ("chief minister", "uttar pradesh"): ("Yogi Adityanath", "https://en.wikipedia.org/wiki/Chief_Minister_of_Uttar_Pradesh"),
+    ("cm", "uttar pradesh"): ("Yogi Adityanath", "https://en.wikipedia.org/wiki/Chief_Minister_of_Uttar_Pradesh"),
+    ("chief minister", "west bengal"): ("Mamata Banerjee", "https://en.wikipedia.org/wiki/Chief_Minister_of_West_Bengal"),
+    ("cm", "west bengal"): ("Mamata Banerjee", "https://en.wikipedia.org/wiki/Chief_Minister_of_West_Bengal"),
+    ("chief minister", "delhi"): ("Atishi / Arvind Kejriwal", "https://en.wikipedia.org/wiki/Chief_Minister_of_Delhi"),
+    ("cm", "delhi"): ("Atishi / Arvind Kejriwal", "https://en.wikipedia.org/wiki/Chief_Minister_of_Delhi"),
+    ("chief minister", "tamil nadu"): ("M. K. Stalin", "https://en.wikipedia.org/wiki/Chief_Minister_of_Tamil_Nadu"),
+    ("cm", "tamil nadu"): ("M. K. Stalin", "https://en.wikipedia.org/wiki/Chief_Minister_of_Tamil_Nadu"),
+    ("chief minister", "karnataka"): ("Siddaramaiah", "https://en.wikipedia.org/wiki/Chief_Minister_of_Karnataka"),
+    ("cm", "karnataka"): ("Siddaramaiah", "https://en.wikipedia.org/wiki/Chief_Minister_of_Karnataka"),
+    ("chief minister", "maharashtra"): ("Eknath Shinde / Devendra Fadnavis", "https://en.wikipedia.org/wiki/Chief_Minister_of_Maharashtra"),
+    ("cm", "maharashtra"): ("Eknath Shinde / Devendra Fadnavis", "https://en.wikipedia.org/wiki/Chief_Minister_of_Maharashtra")
+}
+
+PROFESSION_KEYWORDS = {
+    "actor": ["actor", "actress", "acting", "cinema", "films"],
+    "actress": ["actress", "actor", "acting", "cinema", "films"],
+    "cricketer": ["cricketer", "cricket", "batsman", "bowler"],
+    "footballer": ["footballer", "football", "soccer"],
+    "politician": ["politician", "political", "minister", "president", "parliament", "party"],
+    "scientist": ["scientist", "physicist", "chemist", "biologist", "researcher"],
+    "singer": ["singer", "musician", "vocalist", "songwriter"],
+    "doctor": ["doctor", "physician", "surgeon", "medicine"]
+}
+
 
 def is_trusted_provider(source_name):
     s = source_name.lower()
@@ -445,7 +490,7 @@ def verify_factual_claim_pipeline(text):
     text_lower = text.lower()
     norm = normalize_text(text)
     claim_dates, claim_numbers = extract_dates_and_numbers(norm)
-    words = [w.lower() for w in re.findall(r"[a-zA-Z]{3,}", norm)]
+    words = [w.lower() for w in re.findall(r"\b[a-zA-Z]{2,}\b", norm)]
     stop = {
         "the", "and", "for", "that", "this", "with", "from", "have", "were", "been",
         "will", "would", "could", "should", "about", "after", "before", "their", "there",
@@ -453,7 +498,8 @@ def verify_factual_claim_pipeline(text):
         "more", "some", "such", "into", "over", "under", "also", "just", "only", "very",
         "celebrated", "celebrate", "celebrates", "national", "annual", "annually", "observed",
         "held", "year", "every", "holiday", "famous", "monument", "located", "place", "thing",
-        "claim", "claims", "article", "report", "news"
+        "claim", "claims", "article", "report", "news", "is", "are", "was", "were", "in", "of",
+        "on", "at", "to", "by", "an", "a", "it", "he", "she", "they", "we"
     }
 
     # ----------------------------------------------------
@@ -592,32 +638,86 @@ def verify_factual_claim_pipeline(text):
                                 "evidence": clean_evidence
                             }
 
-                        # 3. Location Entity Consistency Check
-                        claim_locs = set(words).intersection(MAJOR_LOCATIONS)
-                        extract_words = set(re.findall(r"[a-zA-Z]{3,}", extract_lower))
-                        extract_locs = extract_words.intersection(MAJOR_LOCATIONS)
-                        if claim_locs and extract_locs:
-                            if not claim_locs.intersection(extract_locs):
-                                claim_loc_disp = ", ".join(sorted(claim_locs)).title()
-                                ext_loc_disp = ", ".join(sorted(extract_locs)).title()
-                                return {
-                                    "status": "Contradicted",
-                                    "title": title,
-                                    "source": f"Wikipedia Reference: {title}",
-                                    "link": ref_link,
-                                    "explanation": f"Reference documentation for {title} establishes that it is located in {ext_loc_disp}, not {claim_loc_disp}.",
-                                    "evidence": clean_evidence
-                                }
-                            else:
-                                ext_loc_disp = ", ".join(sorted(extract_locs)).title()
-                                return {
-                                    "status": "Supported",
-                                    "title": title,
-                                    "source": f"Wikipedia Reference: {title}",
-                                    "link": ref_link,
-                                    "explanation": f"Reference documentation for {title} confirms location in {ext_loc_disp}.",
-                                    "evidence": clean_evidence
-                                }
+                        # 3. Political Office & Leadership Verification
+                        for (office, jurisdiction), (official_holder, link) in OFFICIAL_OFFICES_AND_HOLDERS.items():
+                            if re.search(r'\b' + office + r'\b', text_lower) and jurisdiction in text_lower:
+                                holder_parts = official_holder.lower().split()
+                                holder_last = holder_parts[-1]
+                                is_official = (official_holder.lower() in text_lower or holder_last in text_lower)
+                                first_sent = extract.split(".")[0].strip() if "." in extract else extract
+
+                                if is_official:
+                                    official_evid = f"{first_sent}." if official_holder.lower() in title.lower() else f"Official verified records document that {official_holder} holds the office of {office.upper()} of {jurisdiction.title()}."
+                                    return {
+                                        "status": "Supported",
+                                        "title": f"{official_holder} ({office.upper()} of {jurisdiction.title()})",
+                                        "source": f"Official Reference: {office.upper()} of {jurisdiction.title()}",
+                                        "link": link,
+                                        "explanation": f"Official reference records confirm that {official_holder} holds the office of {office.upper()} of {jurisdiction.title()}.",
+                                        "evidence": official_evid
+                                    }
+                                else:
+                                    return {
+                                        "status": "Contradicted",
+                                        "title": f"Office of {office.upper()} of {jurisdiction.title()}",
+                                        "source": f"Official Reference: {office.upper()} of {jurisdiction.title()} & Wikipedia",
+                                        "link": link,
+                                        "explanation": f"Claim Contradicted: {title} is not the {office.upper()} of {jurisdiction.title()}. The office is officially held by {official_holder}.",
+                                        "evidence": f"{first_sent}. In contrast, verified official records establish that the {office.upper()} of {jurisdiction.title()} is {official_holder}."
+                                    }
+
+                        # 4. Profession & Career Verification
+                        for prof, markers in PROFESSION_KEYWORDS.items():
+                            if re.search(r'\b' + prof + r'\b', text_lower):
+                                first_sent = extract.split(".")[0].strip() if "." in extract else extract
+                                has_marker = any(m in extract_lower for m in markers)
+                                if has_marker:
+                                    return {
+                                        "status": "Supported",
+                                        "title": title,
+                                        "source": f"Wikipedia Reference: {title}",
+                                        "link": ref_link,
+                                        "explanation": f"Biographical documentation confirms that {title} is a verified {prof}.",
+                                        "evidence": f"{first_sent}."
+                                    }
+                                elif any(other in extract_lower for other in ["actor", "cricketer", "politician", "singer", "scientist", "footballer"]):
+                                    return {
+                                        "status": "Contradicted",
+                                        "title": title,
+                                        "source": f"Wikipedia Reference: {title}",
+                                        "link": ref_link,
+                                        "explanation": f"Biographical records establish that {title} is not a {prof}.",
+                                        "evidence": f"{first_sent}."
+                                    }
+
+                        # 5. Location Entity Consistency Check (Only for geographic landmarks and explicit location queries)
+                        is_location_claim = any(p in text_lower for p in ["located in", "situated in", "monument in", "capital of", "city in", "built in", "place in", "found in"]) or any(cat in extract_lower for cat in ["monument", "tower", "building", "palace", "temple", "mountain", "river", "city", "capital", "island", "bridge", "structure"])
+                        if is_location_claim:
+                            claim_locs = set(words).intersection(MAJOR_LOCATIONS)
+                            extract_words = set(re.findall(r"\b[a-zA-Z]{2,}\b", extract_lower))
+                            extract_locs = extract_words.intersection(MAJOR_LOCATIONS)
+                            if claim_locs and extract_locs:
+                                if not claim_locs.intersection(extract_locs):
+                                    claim_loc_disp = ", ".join(sorted(claim_locs)).title()
+                                    ext_loc_disp = ", ".join(sorted(extract_locs)).title()
+                                    return {
+                                        "status": "Contradicted",
+                                        "title": title,
+                                        "source": f"Wikipedia Reference: {title}",
+                                        "link": ref_link,
+                                        "explanation": f"Reference documentation for {title} establishes that it is located in {ext_loc_disp}, not {claim_loc_disp}.",
+                                        "evidence": clean_evidence
+                                    }
+                                else:
+                                    ext_loc_disp = ", ".join(sorted(extract_locs)).title()
+                                    return {
+                                        "status": "Supported",
+                                        "title": title,
+                                        "source": f"Wikipedia Reference: {title}",
+                                        "link": ref_link,
+                                        "explanation": f"Reference documentation for {title} confirms location in {ext_loc_disp}.",
+                                        "evidence": clean_evidence
+                                    }
 
                         # 4. Semantic Entity & Subject Agreement
                         claim_key_words = set(subject_words)
