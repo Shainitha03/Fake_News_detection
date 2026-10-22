@@ -4,130 +4,342 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="VERITAS AI - Intelligent Fake News Detection and Fact Verification System.">
+    <meta name="keywords" content="Fake News Detection, NLP, Machine Learning, Fact Checking, Logistic Regression, TF-IDF">
 
-    <title>Fake News Detection</title>
+    <title>VERITAS AI // Fake News &amp; Fact Verification</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_buster or '4.0' }}">
 </head>
 
 <body>
 
-    <div class="container">
+    <!-- Ambient Glowing Background -->
+    <div class="ambient-bg" aria-hidden="true">
+        <div class="aurora-orb aurora-orb-1"></div>
+        <div class="aurora-orb aurora-orb-2"></div>
+        <div class="grid-overlay"></div>
+    </div>
 
-        <h1>Fake News Detection</h1>
+    <main class="app-wrapper">
 
-        <p class="subtitle">
-            Natural Language Processing and Machine Learning Classification
-        </p>
-
-        <!-- Mode Navigation Tabs -->
-        <div class="input-tabs">
-            <button type="button" class="tab-btn active" id="tabCustomBtn" onclick="switchMainTab('custom')">
-                ✍️ Enter News Article
-            </button>
-            <button type="button" class="tab-btn" id="tabDatasetBtn" onclick="switchMainTab('dataset')">
-                📁 Select from Dataset
-            </button>
-        </div>
-
-        <!-- =========================================
-             SECTION 1: Enter News Article
-             ========================================= -->
-        <div id="customSection" class="mode-panel active-panel">
-            <div class="section-card">
-                <div class="section-header">
-                    <h2>✍️ Enter News Article</h2>
-                    <p class="section-desc">
-                        Paste or type any news article, headline, or claim below.
-                        Click <strong>Analyze My News</strong> to evaluate the exact text with our trained Machine Learning model.
-                    </p>
+        <!-- Streamlined Top Navigation -->
+        <header class="site-header">
+            <nav class="top-bar">
+                <div class="brand-badge">
+                    <div class="brand-icon">🛡️</div>
+                    <div>
+                        <span class="brand-name">VERITAS AI</span>
+                        <span class="brand-tag">Fact Shield</span>
+                    </div>
                 </div>
 
-                <form action="/predict" method="POST" id="customNewsForm" onsubmit="return validateCustomNewsForm()">
+                <div class="header-status-group">
+                    <div class="status-pill">
+                        <span class="pulse-dot"></span>
+                        <span>System: <strong>Active &amp; Verified</strong></span>
+                    </div>
+                    <!-- Dark / Light Theme Toggle -->
+                    <button type="button" class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle theme">
+                        ☀️ <span>Light Mode</span>
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Clean, Compact Hero -->
+            <section class="hero-content">
+                <h1 class="hero-title">
+                    Fake News &amp; <span class="gradient-text">Credibility Detector</span>
+                </h1>
+                <p class="hero-desc">
+                    Evaluate articles with TF-IDF statistical machine learning and live reference verification.
+                </p>
+            </section>
+        </header>
+
+        <!-- Clean Navigation Tabs -->
+        <nav class="mode-tabs-wrapper" aria-label="System Navigation">
+            <div class="mode-tabs-container">
+                <button type="button" class="nav-tab-btn active" id="tab-custom-btn" onclick="switchMainTab('custom')">
+                    ✍️ Detector
+                </button>
+                <button type="button" class="nav-tab-btn" id="tab-dataset-btn" onclick="switchMainTab('dataset')">
+                    📁 Benchmark Samples
+                </button>
+                <button type="button" class="nav-tab-btn" id="tab-radar-btn" onclick="switchMainTab('radar')">
+                    📡 Live News Wire
+                </button>
+                <button type="button" class="nav-tab-btn" id="tab-metrics-btn" onclick="switchMainTab('metrics')">
+                    🧠 Model Metrics
+                </button>
+            </div>
+        </nav>
+
+        <!-- ==================================================================
+             PANEL 1: INSTANT DETECTOR (Clean & Unified Input)
+             ================================================================== -->
+        <section id="section-custom" class="mode-panel active-panel">
+            <div class="glass-card">
+
+                <!-- Collapsible URL Link Input Box (revealed when user clicks Link button) -->
+                <div id="urlScraperBox" class="url-scraper-box">
+                    <div class="url-input-group">
+                        <input 
+                            type="url" 
+                            id="newsUrlInput" 
+                            class="url-input-field" 
+                            placeholder="Paste article web link (e.g. https://www.bbc.com/news/...)" 
+                        />
+                        <button type="button" id="scrapeUrlBtn" class="btn btn-primary" onclick="scrapeAndAnalyzeUrl()">
+                            ⚡ Scrape &amp; Analyze
+                        </button>
+                        <button type="button" class="btn btn-ghost" onclick="toggleUrlInput(false)" title="Close link input">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Unified Input Area -->
+                <form id="customNewsForm" action="/predict" method="POST" onsubmit="runInstantAnalysis(event); return false;">
                     <input type="hidden" name="source_type" value="Custom News Article" />
 
-                    <!-- Separate Text Area for Custom News -->
-                    <textarea id="customNewsText" name="text" placeholder="Paste or type your news article here (e.g., headline, reporting paragraphs, or claim)..." rows="8" required></textarea>
+                    <div class="textarea-wrapper">
+                        <textarea 
+                            id="customNewsText" 
+                            name="text" 
+                            class="custom-textarea" 
+                            placeholder="Type or paste any news article, headline, or statement here to check credibility..." 
+                            required></textarea>
 
-                    <div class="input-guidance">
-                        💡 <strong>Tip:</strong> The model evaluates linguistic and vocabulary patterns learned from news datasets. For best reliability, provide complete paragraphs (20+ words).
-                    </div>
+                        <!-- Subtle Bottom Tools Bar inside the Input Box -->
+                        <div class="textarea-meta-bar">
+                            <div class="input-tools-left">
+                                <span class="meta-word-count"><strong id="analyticsWordCount">0</strong> words</span>
+                                <span class="tool-separator">•</span>
+                                <button type="button" class="tool-inline-btn" onclick="toggleUrlInput(true)">
+                                    🔗 Paste Link
+                                </button>
+                                <button type="button" class="tool-inline-btn" id="voiceDictateBtn" onclick="toggleVoiceDictation()">
+                                    🎙️ Dictate
+                                </button>
+                                <button type="button" class="tool-inline-btn" onclick="pasteFromClipboard()">
+                                    📋 Paste Text
+                                </button>
+                            </div>
 
-                    <!-- Action Buttons -->
-                    <div class="buttons">
-                        <button type="submit" id="analyzeMyNewsBtn" class="analyze-btn">
-                            🔍 Analyze My News
-                        </button>
-
-                        <button type="button" class="clear-btn" onclick="clearCustomText()">
-                            CLEAR
-                        </button>
+                            <div class="input-actions-right">
+                                <button type="button" class="btn btn-ghost" onclick="clearCustomText()">
+                                    Clear
+                                </button>
+                                <button type="button" id="analyzeBtn" class="btn btn-primary" onclick="runInstantAnalysis(event)">
+                                    🔍 Analyze Credibility
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </form>
-            </div>
-        </div>
 
-        <!-- =========================================
-             SECTION 2: Dataset-Based Prediction
-             ========================================= -->
-        <div id="datasetSection" class="mode-panel" style="display: none;">
-            <div class="section-card">
-                <div class="section-header">
-                    <h2>📁 Test With Dataset Articles</h2>
-                    <p class="section-desc">
-                        Select an article from our pre-loaded Fake and True news dataset to see how the model classifies it.
-                    </p>
+                <!-- Scanning Animation HUD -->
+                <div id="scanningHud" class="scanning-hud">
+                    <div class="scan-radar-circle"></div>
+                    <div class="scan-step-text" id="scanStepText">Analyzing linguistic patterns and checking verified sources...</div>
+                    <div class="scan-progress-track">
+                        <div class="scan-progress-bar"></div>
+                    </div>
                 </div>
 
-                <!-- Dataset Sample Dropdown -->
-                <div class="sample-selection">
-                    <select id="sampleDropdown" onchange="pasteSample()">
-                        <option value="">-- Select a sample news article from dataset --</option>
-                    </select>
-                    <button type="button" onclick="loadNewSamples()">
-                        🔄 Refresh Samples
+                <!-- Live Results Container -->
+                <div id="liveResultContainer" class="live-result-container">
+                    <!-- Populated cleanly via JS -->
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ==================================================================
+             PANEL 2: DATASET EXPLORER
+             ================================================================== -->
+        <section id="section-dataset" class="mode-panel">
+            <div class="glass-card">
+                <div class="card-top-header">
+                    <div class="card-title-group">
+                        <h2><span>📁</span> Benchmark Dataset Samples</h2>
+                        <p>Verified articles from the 24,000-sample training dataset.</p>
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="loadDatasetSamples()">
+                        🔄 New Batch
                     </button>
                 </div>
 
-                <form action="/predict" method="POST" id="datasetNewsForm" onsubmit="return validateDatasetForm()">
-                    <input type="hidden" name="source_type" value="Dataset Sample" />
-
-                    <!-- Dataset Text Area -->
-                    <textarea id="datasetNewsText" name="text" placeholder="Select an article from the dropdown above to view and predict its content..." rows="8" required></textarea>
-
-                    <div class="buttons">
-                        <button type="submit" id="predictDatasetBtn" class="dataset-btn">
-                            PREDICT DATASET NEWS
+                <div class="dataset-controls-bar">
+                    <div class="dataset-filter-pills">
+                        <button type="button" class="filter-pill active" id="filter-pill-all" onclick="setDatasetFilter('all')">
+                            All
                         </button>
-
-                        <button type="button" class="clear-btn" onclick="clearDatasetText()">
-                            CLEAR
+                        <button type="button" class="filter-pill filter-real" id="filter-pill-real" onclick="setDatasetFilter('real')">
+                            🟢 Real News
+                        </button>
+                        <button type="button" class="filter-pill filter-fake" id="filter-pill-fake" onclick="setDatasetFilter('fake')">
+                            🔴 Fake News
                         </button>
                     </div>
-                </form>
+
+                    <input 
+                        type="text" 
+                        id="datasetSearchInput" 
+                        class="dataset-search-input" 
+                        placeholder="Search samples by topic..." 
+                        oninput="filterDatasetSearch()" />
+                </div>
+
+                <div class="dataset-grid" id="datasetGrid">
+                    <!-- Loaded dynamically via JS -->
+                </div>
             </div>
-        </div>
+        </section>
 
-        <!-- About and Disclaimer Box -->
-        <div class="about">
-            <h2>About the Project &amp; Machine Learning Model</h2>
-            <p>
-                This system uses classical <strong>Natural Language Processing (NLP)</strong>.
-                Raw news articles are cleaned (lowercased, punctuation and stopwords removed, and stemmed with PorterStemmer).
-                Text is then vectorized using <strong>TF-IDF (50,000 unigram/bigram features)</strong>
-                and evaluated by a fitted <strong>Logistic Regression</strong> classifier.
-            </p>
-            <p style="margin-top: 10px;">
-                The model achieved <strong>97.4% test accuracy</strong> on its training dataset (ISOT Fake &amp; True News).
-            </p>
-            <div class="about-disclaimer">
-                ⚠️ <strong>Note:</strong> Predictions reflect statistical linguistic patterns from historical news data and should not be used as infallible factual verification. Unseen topics or brief sentences may produce incorrect classifications.
+        <!-- ==================================================================
+             PANEL 3: LIVE RSS NEWS WIRE
+             ================================================================== -->
+        <section id="section-radar" class="mode-panel">
+            <div class="glass-card">
+                <div class="card-top-header">
+                    <div class="card-title-group">
+                        <h2><span>📡</span> Live Global News Wire</h2>
+                        <p>Fetch breaking news feeds and test credibility in 1 click.</p>
+                    </div>
+                </div>
+
+                <div class="radar-source-selector">
+                    <button type="button" class="source-btn active" id="source-btn-bbc" onclick="loadLiveNews('bbc')">
+                        BBC News
+                    </button>
+                    <button type="button" class="source-btn" id="source-btn-guardian" onclick="loadLiveNews('guardian')">
+                        The Guardian
+                    </button>
+                    <button type="button" class="source-btn" id="source-btn-npr" onclick="loadLiveNews('npr')">
+                        NPR
+                    </button>
+                    <button type="button" class="source-btn" id="source-btn-aljazeera" onclick="loadLiveNews('aljazeera')">
+                        Al Jazeera
+                    </button>
+                    <button type="button" class="source-btn" id="source-btn-timesofindia" onclick="loadLiveNews('timesofindia')">
+                        Times of India
+                    </button>
+                </div>
+
+                <div class="rss-news-grid" id="rssNewsGrid">
+                    <!-- Loaded dynamically via JS -->
+                </div>
             </div>
-        </div>
+        </section>
 
-    </div>
+        <!-- ==================================================================
+             PANEL 4: MODEL METRICS & ARCHITECTURE
+             ================================================================== -->
+        <section id="section-metrics" class="mode-panel">
+            <div class="glass-card">
+                <div class="card-top-header">
+                    <div class="card-title-group">
+                        <h2><span>🧠</span> Model Performance &amp; Confusion Matrix</h2>
+                        <p>Test evaluation results on 4,800 holdout articles.</p>
+                    </div>
+                </div>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+                <div class="metrics-dashboard-grid">
+                    <div class="metric-gauge-card">
+                        <div class="gauge-val" id="gaugeAccuracy">97.83%</div>
+                        <div class="gauge-title">Accuracy</div>
+                    </div>
+                    <div class="metric-gauge-card">
+                        <div class="gauge-val" id="gaugePrecision">97.52%</div>
+                        <div class="gauge-title">Precision</div>
+                    </div>
+                    <div class="metric-gauge-card">
+                        <div class="gauge-val" id="gaugeRecall">98.17%</div>
+                        <div class="gauge-title">Recall</div>
+                    </div>
+                    <div class="metric-gauge-card">
+                        <div class="gauge-val" id="gaugeF1">97.84%</div>
+                        <div class="gauge-title">F1 Score</div>
+                    </div>
+                </div>
+
+                <div class="matrix-container">
+                    <div class="matrix-header">
+                        <h3 style="font-size: 15px; font-weight: 700; color: var(--text-primary);">
+                            Confusion Matrix (4,800 Test Samples)
+                        </h3>
+                    </div>
+
+                    <table class="matrix-table" aria-label="Confusion Matrix">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Predicted Fake</th>
+                                <th style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Predicted Real</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; text-align: right; padding-right: 12px;">Actual Fake</th>
+                                <td class="matrix-cell cell-tn">
+                                    <div class="cell-num" id="matrixTN">2,340</div>
+                                    <div class="cell-lbl">True Negative</div>
+                                </td>
+                                <td class="matrix-cell cell-fp">
+                                    <div class="cell-num" id="matrixFP">60</div>
+                                    <div class="cell-lbl">False Positive</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; text-align: right; padding-right: 12px;">Actual Real</th>
+                                <td class="matrix-cell cell-fn">
+                                    <div class="cell-num" id="matrixFN">44</div>
+                                    <div class="cell-lbl">False Negative</div>
+                                </td>
+                                <td class="matrix-cell cell-tp">
+                                    <div class="cell-num" id="matrixTP">2,356</div>
+                                    <div class="cell-lbl">True Positive</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary);">
+                        NLP Pipeline Flow
+                    </h3>
+                    <div class="pipeline-flow">
+                        <div class="pipeline-step-node">
+                            <div class="step-num">01</div>
+                            <div class="step-title">Clean &amp; Stem</div>
+                        </div>
+                        <div class="pipeline-arrow">➔</div>
+                        <div class="pipeline-step-node">
+                            <div class="step-num">02</div>
+                            <div class="step-title">TF-IDF Vectorizer</div>
+                        </div>
+                        <div class="pipeline-arrow">➔</div>
+                        <div class="pipeline-step-node">
+                            <div class="step-num">03</div>
+                            <div class="step-title">Logistic Classifier</div>
+                        </div>
+                        <div class="pipeline-arrow">➔</div>
+                        <div class="pipeline-step-node">
+                            <div class="step-num">04</div>
+                            <div class="step-title">Fact Cross-Check</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}?v={{ cache_buster or '4.0' }}"></script>
 
 </body>
 

@@ -4,246 +4,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Detailed Machine Learning &amp; Factual Verification Report from VERITAS AI.">
 
-    <title>Prediction Result - Fake News Detection</title>
+    <title>Analysis Report - VERITAS AI</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ cache_buster or '3.5' }}">
 </head>
 
 <body>
 
-    <div class="container">
+    <!-- Ambient Glowing Background -->
+    <div class="ambient-bg" aria-hidden="true">
+        <div class="aurora-orb aurora-orb-1"></div>
+        <div class="aurora-orb aurora-orb-2"></div>
+        <div class="aurora-orb aurora-orb-3"></div>
+        <div class="grid-overlay"></div>
+    </div>
 
-        <h1>Analysis Result</h1>
+    <main class="app-wrapper">
 
-        <p class="subtitle">
-            Natural Language Processing &amp; Machine Learning Classification
-        </p>
+        <!-- Top Header Navigation -->
+        <header class="site-header">
+            <nav class="top-bar">
+                <div class="brand-badge">
+                    <div class="brand-icon">🛡️</div>
+                    <div>
+                        <span class="brand-name">VERITAS AI</span>
+                        <span class="brand-tag">Deep Report</span>
+                    </div>
+                </div>
+
+                <div class="header-status-group">
+                    <button type="button" class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle theme">
+                        ☀️ <span>Light Mode</span>
+                    </button>
+                    <a href="/" class="btn btn-secondary" style="padding: 6px 14px; font-size: 13px;">
+                        ⬅ Back to Detector
+                    </a>
+                </div>
+            </nav>
+        </header>
 
         {% if error %}
-        <div class="result error-box" style="display: block;">
-            ⚠️ {{ error }}
-        </div>
-        <div style="text-align: center; margin-top: 25px;">
-            <a href="/" class="back-btn">⬅ Back to News Detector</a>
+        <div class="glass-card" style="text-align: center; padding: 50px 20px;">
+            <div style="font-size: 40px; margin-bottom: 16px;">⚠️</div>
+            <h2 style="font-family: var(--font-heading); color: var(--accent-rose); margin-bottom: 12px;">Evaluation Error</h2>
+            <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto 24px;">{{ error }}</p>
+            <a href="/" class="btn btn-primary">Return to Detector</a>
         </div>
         {% else %}
 
-        <!-- Result Card -->
-        <div class="result-card {% if prediction == 'Real News' or prediction == 'REAL' %}result-real{% else %}result-fake{% endif %}">
+        <div class="glass-card">
 
-            <!-- Primary Required Prediction & Verification Format Banner (Requirement 10) -->
-            <div class="analysis-verdict-banner {% if prediction == 'Real News' or prediction == 'REAL' %}banner-real{% else %}banner-fake{% endif %}">
-                <div class="verdict-banner-row">
-                    <span class="banner-label">Prediction:</span>
-                    <span class="banner-value">
+            <!-- Primary Verdict Banner -->
+            <div class="verdict-banner-modern {% if prediction == 'Real News' or prediction == 'REAL' %}banner-real{% else %}banner-fake{% endif %}">
+                <div class="verdict-left">
+                    <div class="verdict-icon-bubble">
                         {% if prediction == 'Real News' or prediction == 'REAL' %}
-                        🟢 REAL NEWS
+                        🟢
                         {% else %}
-                        🔴 FAKE NEWS
+                        🔴
                         {% endif %}
-                    </span>
-                </div>
-                <div class="verdict-banner-row">
-                    <span class="banner-label">Factual Verification:</span>
-                    <span class="verification-badge-status status-{{ factual_verification|lower }}">
-                        {{ factual_verification }}
-                    </span>
-                </div>
-                <div class="verdict-banner-row">
-                    <span class="banner-label">Reason:</span>
-                    <span class="banner-reason">{{ reason }}</span>
-                </div>
-            </div>
-
-            <!-- Result Header with Model Confidence & Style Breakdown -->
-            <div class="result-header" style="margin-top: 18px;">
-                <div class="result-status">
-                    Model Assessment: <strong>{{ prediction }}</strong>
-                </div>
-                <div class="confidence-badge {% if prediction == 'Real News' or prediction == 'REAL' %}badge-real{% else %}badge-fake{% endif %}">
-                    {{ confidence }}% Statistical Confidence
-                </div>
-            </div>
-
-            {% if disagreement_explanation %}
-            <!-- Requirement 10: Model vs Factual Disagreement Displayed Separately -->
-            <div class="disagreement-card">
-                <div class="disagreement-title">
-                    ⚠️ Model &amp; Factual Verification Disagreement
-                </div>
-                <p class="disagreement-text">
-                    {{ disagreement_explanation }}
-                </p>
-                <div class="disagreement-breakdown">
-                    <div class="breakdown-item">
-                        <span class="breakdown-pill ml-pill">Statistical ML Classifier: <strong>{{ ml_style_prediction }}</strong></span>
-                        <small>Evaluates linguistic vocabulary distributions and historical article styling.</small>
                     </div>
-                    <div class="breakdown-item">
-                        <span class="breakdown-pill fact-pill">Factual Verification: <strong>{{ factual_verification }}</strong></span>
-                        <small>Evaluates official government records, encyclopedic sources, and credible feeds.</small>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Source Type Badge -->
-            <div class="source-type-indicator">
-                <span class="source-pill">Input Source: <strong>{{ source_type or 'Custom News Article' }}</strong></span>
-                <span class="tokens-pill">Recognized Vocabulary Features: <strong>{{ vocab_matches }}</strong></span>
-            </div>
-
-            <!-- Probability Bar -->
-            <div class="probability-section">
-                <div class="prob-labels">
-                    <span>Machine-Learning Linguistic Distribution:</span>
-                    <span>
-                        <strong class="real-text">Real News: {{ real_probability }}%</strong> |
-                        <strong class="fake-text">Fake News: {{ fake_probability }}%</strong>
-                    </span>
-                </div>
-                <div class="prob-bar-container">
-                    <div class="prob-bar-real" style="width: {{ real_probability }}%;"
-                        title="Real News: {{ real_probability }}%"></div>
-                    <div class="prob-bar-fake" style="width: {{ fake_probability }}%;"
-                        title="Fake News: {{ fake_probability }}%"></div>
-                </div>
-            </div>
-
-            <!-- Independent Factual Verification Layer -->
-            {% if verified_info %}
-                {% if verified_info.status == 'Contradicted' or verified_info.type == 'CONTRADICTED' %}
-                <div class="verification-card contradicted-card">
-                    <div class="verification-title">
-                        ❌ Claim Contradicted by Evidence
-                    </div>
-                    <p class="verification-desc">
-                        {{ verified_info.explanation }}
-                    </p>
-                    <div class="source-match-box">
-                        <span class="source-tag contradicted-tag">{{ verified_info.source }}</span>
-                        <div class="source-headline">
-                            {% if verified_info.link %}
-                            <a href="{{ verified_info.link }}" target="_blank" rel="noopener noreferrer">
-                                "{{ verified_info.title }}" ↗
-                            </a>
+                    <div>
+                        <div class="verdict-title-text">
+                            {% if prediction == 'Real News' or prediction == 'REAL' %}
+                            REAL / CREDIBLE NEWS
                             {% else %}
-                            "{{ verified_info.title }}"
+                            POTENTIAL FAKE NEWS
                             {% endif %}
                         </div>
-                        {% if verified_info.evidence %}
-                        <div class="evidence-box">
-                            <strong>Verified Evidence:</strong> "{{ verified_info.evidence }}"
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-                {% elif verified_info.status == 'Supported' or verified_info.type == 'SUPPORTED' or verified_info.type == 'VERIFIED' %}
-                <div class="verification-card verified-card">
-                    <div class="verification-title">
-                        ✅ Factual Verification: Supported
-                    </div>
-                    <p class="verification-desc">
-                        {{ verified_info.explanation }}
-                    </p>
-                    <div class="source-match-box">
-                        <span class="source-tag">{{ verified_info.source }}</span>
-                        <div class="source-headline">
-                            {% if verified_info.link %}
-                            <a href="{{ verified_info.link }}" target="_blank" rel="noopener noreferrer">
-                                "{{ verified_info.title }}" ↗
-                            </a>
+                        <div class="verdict-subtitle">
+                            {% if prediction == 'Real News' or prediction == 'REAL' %}
+                            Verified / Credible Content
                             {% else %}
-                            "{{ verified_info.title }}"
+                            Identified as Misinformation / Fake
                             {% endif %}
                         </div>
-                        {% if verified_info.evidence %}
-                        <div class="evidence-box">
-                            <strong>Verified Evidence:</strong> "{{ verified_info.evidence }}"
-                        </div>
-                        {% endif %}
                     </div>
                 </div>
-                {% elif verified_info.status == 'Mixed or Misleading' or verified_info.type == 'MIXED_OR_MISLEADING' %}
-                <div class="verification-card misleading-card">
-                    <div class="verification-title">
-                        ⚠️ Factual Verification: Mixed or Misleading
-                    </div>
-                    <p class="verification-desc">
-                        {{ verified_info.explanation }}
-                    </p>
-                    <div class="source-match-box">
-                        <span class="source-tag misleading-tag">{{ verified_info.source }}</span>
-                        <div class="source-headline">
-                            {% if verified_info.link %}
-                            <a href="{{ verified_info.link }}" target="_blank" rel="noopener noreferrer">
-                                "{{ verified_info.title }}" ↗
-                            </a>
-                            {% else %}
-                            "{{ verified_info.title }}"
-                            {% endif %}
-                        </div>
-                        {% if verified_info.evidence %}
-                        <div class="evidence-box">
-                            <strong>Reported Evidence:</strong> "{{ verified_info.evidence }}"
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-                {% else %}
-                <div class="verification-card unverified-card">
-                    <div class="verification-title">
-                        ❓ Factual Verification: Unable to Verify
-                    </div>
-                    <p class="verification-desc">
-                        {{ verified_info.explanation }}
-                    </p>
-                    <div class="source-match-box">
-                        <span class="source-tag unverified-tag">Status: Unable to Verify</span>
-                        <div style="font-size: 13.5px; color: #555; margin-top: 4px;">
-                            Unable to verify this claim with the available evidence. The system avoids guessing factual truth.
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
-            {% endif %}
-
-            <!-- IMPORTANT: Model Limitations & Disclaimer Notice -->
-            <div class="model-disclaimer-box">
-                <h4>⚠️ Important Notice on Predictions &amp; Model Limitations</h4>
-                <p>
-                    <strong>Statistical Pattern Detection:</strong> This classification is generated by a Logistic Regression model trained on historical news text features (TF-IDF). It identifies linguistic patterns, style, and vocabulary distributions rather than evaluating real-world facts.
-                </p>
-                <p>
-                    <strong>Predictions Can Be Wrong:</strong> The model does not achieve perfect accuracy. Articles about modern topics outside the training dataset (such as new technology, sports, or local events) or very brief statements can easily mislead the model.
-                </p>
-                <p>
-                    <strong>Do Not Treat as Absolute Truth:</strong> A "Real News" or "Fake News" label from this model should never be taken as definitive proof of factual accuracy. Always verify important news through multiple credible news outlets and certified fact-checkers.
-                </p>
             </div>
 
-            <!-- News Snippet Container -->
-            <div class="news-preview-box">
-                <h3>Analyzed News Text:</h3>
-                <p style="font-size: 0.9em; color: #555; margin-bottom: 10px;">
-                    Exact text submitted for evaluation (Length: {{ word_count }} words | Model Features Recognized: {{ vocab_matches }}):
-                </p>
-                <div class="news-preview-text">
+            <!-- Reason & Verification Card -->
+            <div class="reason-panel-card {% if prediction == 'Real News' or prediction == 'REAL' %}reason-panel-real{% else %}reason-panel-fake{% endif %}">
+                <div class="reason-panel-header">
+                    <span class="reason-header-icon">{% if prediction == 'Real News' or prediction == 'REAL' %}✅{% else %}⚠️{% endif %}</span>
+                    <h3 class="reason-header-title">
+                        {% if prediction == 'Real News' or prediction == 'REAL' %}
+                        Verification Summary
+                        {% else %}
+                        Reason for Identification
+                        {% endif %}
+                    </h3>
+                </div>
+                <div class="reason-panel-body">
+                    <p class="reason-primary-text">
+                        {{ reason or ("Content matches standard credible journalistic reporting practices. No factual contradictions were detected." if (prediction == 'Real News' or prediction == 'REAL') else "Flagged as potential fake news based on sensationalist markers and unverified assertions.") }}
+                    </p>
+
+                    {% if verified_info and (verified_info.evidence or verified_info.source) %}
+                    <div class="evidence-quote-box">
+                        <div class="evidence-quote-label">Authoritative Fact Reference:</div>
+                        {% if verified_info.evidence %}
+                        <blockquote class="evidence-quote">"{{ verified_info.evidence }}"</blockquote>
+                        {% endif %}
+                        {% if verified_info.source %}
+                        <div class="evidence-source-meta">
+                            <strong>Source:</strong> {{ verified_info.source }}
+                        </div>
+                        {% endif %}
+                        {% if verified_info.link %}
+                        <div style="margin-top: 8px;">
+                            <a href="{{ verified_info.link }}" target="_blank" rel="noopener noreferrer" class="evidence-source-link">
+                                View Reference Document ↗
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Analyzed Text Snippet -->
+            <div style="margin-top: 24px; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h3 style="font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
+                        Submitted Article Text
+                    </h3>
+                    <span style="font-size: 12px; font-family: var(--font-mono); color: var(--text-muted);">
+                        Length: {{ word_count }} words
+                    </span>
+                </div>
+                <div style="font-size: 14.5px; color: var(--text-primary); line-height: 1.65; white-space: pre-wrap; max-height: 250px; overflow-y: auto;">
                     {{ news_text }}
                 </div>
             </div>
 
-        </div>
+            <!-- Transparency Disclaimer -->
+            <div style="margin-top: 20px; padding: 14px 18px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: 12px; font-size: 12.5px; color: var(--text-muted); line-height: 1.5;">
+                ℹ️ <strong>System Transparency:</strong> Statistical NLP identifies vocabulary patterns and linguistic sentiment rather than infallible ground truth. For sensitive breaking developments, always cross-reference multiple credible wire services.
+            </div>
 
-        <!-- Back Button -->
-        <div class="actions-container">
-            <a href="/" class="back-btn">⬅ Back to News Detector</a>
+            <!-- Actions Container -->
+            <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <a href="/" class="btn btn-secondary">⬅ Back to News Detector</a>
+                <button type="button" class="btn btn-primary" onclick="window.print()">
+                    🖨️ Print / Save PDF Report
+                </button>
+            </div>
+
         </div>
 
         {% endif %}
 
-    </div>
+    </main>
+
+    <script>
+        function initTheme() {
+            const savedTheme = localStorage.getItem("veritas_theme") || "dark";
+            applyTheme(savedTheme);
+        }
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+            const newTheme = currentTheme === "dark" ? "light" : "dark";
+            applyTheme(newTheme);
+            localStorage.setItem("veritas_theme", newTheme);
+        }
+        function applyTheme(theme) {
+            document.documentElement.setAttribute("data-theme", theme);
+            const themeBtn = document.getElementById("themeToggleBtn");
+            if (themeBtn) {
+                themeBtn.innerHTML = theme === "light" ? "🌙 <span>Dark Mode</span>" : "☀️ <span>Light Mode</span>";
+            }
+        }
+        document.addEventListener("DOMContentLoaded", initTheme);
+    </script>
 
 </body>
 
