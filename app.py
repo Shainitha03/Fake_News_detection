@@ -12,9 +12,30 @@ import nltk
 import urllib.request
 import urllib.parse
 import urllib.error
+import json
 from bs4 import BeautifulSoup
 
 app = Flask(__name__)
+
+# Environment variables loader (.env)
+def load_env_file():
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    if os.path.exists(env_path):
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        k = k.strip()
+                        v = v.strip().strip('"').strip("'")
+                        if k and not os.environ.get(k):
+                            os.environ[k] = v
+        except Exception:
+            pass
+
+load_env_file()
+FACT_CHECK_API_KEY = os.environ.get("FACT_CHECK_API_KEY", "").strip()
 
 # Download NLTK stopwords if required
 try:
@@ -467,9 +488,130 @@ def format_date_display(d_str):
     return str(d_str).title()
 
 
+def query_google_fact_check_api(text):
+    """
+    Queries Google Fact Check Tools API using the configured API key.
+    Cross-checks assertions against certified independent fact-checkers
+    (Snopes, PolitiFact, Full Fact, BOOM, AFP, Reuters Fact Check, Factly, etc.).
+    """
+    api_key = os.environ.get("FACT_CHECK_API_KEY", "").strip()
+    if not api_key:
+        return None
+
+    first_part = re.split(r'[\r\n\.!?]', text.strip())[0].strip()
+
+    stop_words_local = {
+        "the", "and", "for", "that", "this", "with", "from", "have", "were", "been",
+        "will", "would", "could", "should", "about", "after", "before", "their", "there",
+        "what", "when", "where", "which", "who", "whom", "whose", "why", "how", "than",
+        "more", "some", "such", "into", "over", "under", "also", "just", "only", "very",
+        "claim", "claims", "article", "report", "news", "is", "are", "was", "were", "in", "of",
+        "on", "at", "to", "by", "an", "a", "it", "he", "she", "they", "we", "has", "had"
+    }
+
+    clean_words = [w.lower() for w in re.findall(r"\b[a-zA-Z]{3,}\b", text) if w.lower() not in stop_words_local]
+    user_words_set = set(clean_words)
+    if not user_words_set:
+        return None
+
+    queries_to_try = []
+    if first_part:
+        fp_clean = " ".join(re.findall(r"\b[a-zA-Z0-9]{2,}\b", first_part)[:8])
+        if fp_clean and len(fp_clean) > 5:
+            queries_to_try.append(fp_clean)
+
+    top_kw = " ".join(clean_words[:6])
+    if top_kw and top_kw not in queries_to_try:
+        queries_to_try.append(top_kw)
+
+    full_kw = " ".join(clean_words[:8])
+    if full_kw and full_kw not in queries_to_try:
+        queries_to_try.append(full_kw)
+
+    for q in queries_to_try:
+        encoded_query = urllib.parse.quote(q)
+        url = f"https://factchecktools.googleapis.com/v1alpha1/claims:search?query={encoded_query}&languageCode=en&key={api_key}"
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "FakeNewsDetector/1.0 (academic-verification)"}
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=4) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                claims = data.get("claims", [])
+                if not claims:
+                    continue
+
+                for c in claims[:6]:
+                    claim_text = (c.get("text") or "").strip()
+                    c_words = set(w.lower() for w in re.findall(r"\b[a-zA-Z]{3,}\b", claim_text) if w.lower() not in stop_words_local)
+                    common = user_words_set.intersection(c_words)
+
+                    user_cov = len(common) / len(user_words_set) if user_words_set else 0
+                    claim_cov = len(common) / len(c_words) if c_words else 0
+
+                    if not (len(common) >= 3 or (len(common) >= 2 and (claim_cov >= 0.35 or user_cov >= 0.35))):
+                        continue
+
+                    reviews = c.get("claimReview", [])
+                    if not reviews:
+                        continue
+
+                    rev = reviews[0]
+                    raw_rating = (rev.get("textualRating") or "").strip()
+                    pub_obj = rev.get("publisher", {})
+                    publisher = pub_obj.get("name") or pub_obj.get("site") or "Certified Fact-Checker"
+                    url_link = rev.get("url") or ""
+                    title = rev.get("title") or claim_text
+
+                    r_lower = raw_rating.lower()
+                    t_lower = title.lower()
+
+                    DEBUNK_RATING_TERMS = [
+                        "false", "fake", "incorrect", "pants on fire", "misleading",
+                        "hoax", "unproven", "fabricated", "not true", "no evidence",
+                        "altered", "manipulated", "debunk", "scam", "wrong",
+                        "falsch", "faux", "inaccurate", "disputed", "myth", "fiction",
+                        "missing context", "partly false", "mostly false"
+                    ]
+
+                    SUPPORT_RATING_TERMS = [
+                        "true", "correct", "accurate", "verified", "mostly true"
+                    ]
+
+                    is_debunked = any(term in r_lower or term in t_lower for term in DEBUNK_RATING_TERMS)
+                    is_supported = any(term in r_lower for term in SUPPORT_RATING_TERMS) and not is_debunked
+
+                    if is_debunked:
+                        clean_rating = raw_rating if len(raw_rating) <= 40 else "False / Debunked"
+                        return {
+                            "status": "Contradicted",
+                            "title": title,
+                            "source": f"{publisher} (Google Fact Check Tools)",
+                            "link": url_link,
+                            "explanation": f"Claim Debunked: Independent fact-checker {publisher} evaluated this claim and rated it: '{clean_rating}'.",
+                            "evidence": f"Claim: \"{claim_text}\"\nRating: {raw_rating}\nFact-Checker: {publisher}\nSource: {url_link}"
+                        }
+                    elif is_supported:
+                        clean_rating = raw_rating if len(raw_rating) <= 40 else "Verified / True"
+                        return {
+                            "status": "Supported",
+                            "title": title,
+                            "source": f"{publisher} (Google Fact Check Tools)",
+                            "link": url_link,
+                            "explanation": f"Claim Corroborated: Independent fact-checker {publisher} verified this claim and rated it: '{clean_rating}'.",
+                            "evidence": f"Claim: \"{claim_text}\"\nRating: {raw_rating}\nFact-Checker: {publisher}\nSource: {url_link}"
+                        }
+        except Exception:
+            continue
+
+    return None
+
+
 def verify_factual_claim_pipeline(text):
     """
     Performs comprehensive multi-stage factual verification:
+    0. Google Fact Check Tools API query against global fact-checking registries.
     1. Checks Known Hoax & Fact Registry for viral claims with authoritative citations.
     2. Checks Official Government References for national days, events, and statutory dates.
     3. Queries authoritative encyclopedic records (Wikipedia reference summaries) with
@@ -501,6 +643,14 @@ def verify_factual_claim_pipeline(text):
         "claim", "claims", "article", "report", "news", "is", "are", "was", "were", "in", "of",
         "on", "at", "to", "by", "an", "a", "it", "he", "she", "they", "we"
     }
+
+    # ----------------------------------------------------
+    # STAGE 0: Google Fact Check Tools API Verification
+    # (Certified fact-checkers: Snopes, PolitiFact, Full Fact, BOOM, AFP, Reuters, etc.)
+    # ----------------------------------------------------
+    fact_check_result = query_google_fact_check_api(text)
+    if fact_check_result:
+        return fact_check_result
 
     # ----------------------------------------------------
     # STAGE 1: Check Known Hoax & Viral Claims Registry
@@ -842,7 +992,7 @@ def verify_factual_claim_pipeline(text):
         "title": "No Verified Reference Record Found",
         "source": "Natural Language Stylometry & Feature Analysis",
         "link": "",
-        "explanation": "No direct factual encyclopedia or news record matched. Evaluating article based on stylistic markers and natural language features.",
+        "explanation": "Unable to verify this claim with the available evidence.",
         "evidence": ""
     }
 
@@ -922,14 +1072,14 @@ def predict():
         real_tokens = [f"'{t.get('token') or t.get('word', '')}'" for t in top_tokens if t.get('impact') == 'REAL']
 
         if result == "Fake News":
-            reason = "Flagged as potential fake news based on sensationalist linguistic markers, unverified assertions, and writing patterns commonly found in fabricated news."
+            reason = "Unable to verify this claim with the available evidence. Flagged as potential fake news based on sensationalist linguistic markers, unverified assertions, and writing patterns commonly found in fabricated news."
             if fake_tokens:
                 evidence_text = f"Linguistic feature analysis identified vocabulary characteristic of fabricated news: {', '.join(fake_tokens[:5])}. The article lacks verifiable journalistic attribution, neutral phrasing, and named primary sources."
             else:
                 evidence_text = "Stylistic analysis identified unverified assertion patterns, subjective hyperbole, and lack of neutral journalistic attribution characteristic of fabricated news."
             evidence_source = "Natural Language Stylometry & Feature Analysis"
         else:
-            reason = "Content matches standard credible journalistic reporting practices. No factual contradictions were detected."
+            reason = "Unable to verify this claim with the available evidence. Content matches standard credible journalistic reporting practices. No factual contradictions were detected."
             if real_tokens:
                 evidence_text = f"Linguistic feature analysis identified formal journalistic indicators: {', '.join(real_tokens[:5])}. The text adheres to objective reporting syntax and standard news attribution conventions."
             else:
@@ -944,7 +1094,13 @@ def predict():
     else:
         prediction_display = "🔴 Prediction: FAKE NEWS ❌"
 
-    disagreement_explanation = None
+    if ml_style_result != result:
+        disagreement_explanation = (
+            f"Model vs Evidence Disagreement: The machine learning linguistic model evaluated the writing style as '{ml_style_result}', "
+            f"but authoritative factual verification confirmed this claim is '{result}' based on verified evidence."
+        )
+    else:
+        disagreement_explanation = None
 
     verified_info = {
         "status": verification_status,

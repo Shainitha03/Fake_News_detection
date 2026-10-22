@@ -89,11 +89,16 @@
             <div class="reason-panel-card {% if prediction == 'Real News' or prediction == 'REAL' %}reason-panel-real{% else %}reason-panel-fake{% endif %}">
                 <div class="reason-panel-header">
                     <span class="reason-header-icon">{% if prediction == 'Real News' or prediction == 'REAL' %}✅{% else %}⚠️{% endif %}</span>
-                    <h3 class="reason-header-title">
+                    <h3 class="reason-header-title" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         {% if prediction == 'Real News' or prediction == 'REAL' %}
-                        Verification Summary
+                        <span>Verification Summary</span>
                         {% else %}
-                        Reason for Identification
+                        <span>Reason for Identification</span>
+                        {% endif %}
+                        {% if factual_verification %}
+                        <span style="font-size: 11px; padding: 2px 8px; border-radius: 6px; background: rgba(255,255,255,0.1); font-weight: 700; letter-spacing: 0.05em; border: 1px solid rgba(255,255,255,0.15);">
+                            {{ factual_verification }}
+                        </span>
                         {% endif %}
                     </h3>
                 </div>

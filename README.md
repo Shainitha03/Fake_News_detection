@@ -4,6 +4,7 @@ An advanced Natural Language Processing (NLP) and Machine Learning project that 
 
 ## Key Features
 - **Multi-Stage Grounded Fact Verification**:
+  - **Google Fact Check Tools API**: Dynamic integration with Google's Fact Check Tools API to cross-reference claims against international certified fact-checking organizations (Snopes, PolitiFact, Full Fact, BOOM, AFP, Reuters Fact Check, Factly).
   - **Authoritative Fact & Viral Hoax Registry**: Evaluates viral claims with official statements (NASA, WHO, PIB Fact Check, RBI, UNESCO).
   - **Government Gazettes & Statutory Days**: Validates national days, events, and official statutory records.
   - **Live Encyclopedic Knowledge (Wikipedia REST API)**: Dynamically verifies subject entities, geographical consistency, and debunks pseudoscientific assertions.
@@ -22,6 +23,8 @@ An advanced Natural Language Processing (NLP) and Machine Learning project that 
 - `templates/`: Modern Jinja2 HTML templates (`index.html`, `result.html`).
 - `static/`: Modern styling (`css/style.css`) and client-side application logic (`js/main.js`).
 - `app.py`: Flask web application and factual verification engine.
+- `.env`: Local environment configuration (keeps private API keys secure and ignored by Git).
+- `.env.example`: Template for environment variables.
 
 ## Quick Start (Run Locally)
 
@@ -30,7 +33,14 @@ An advanced Natural Language Processing (NLP) and Machine Learning project that 
    pip install -r requirements.txt
    ```
 
-2. **Start the Application**:
+2. **Configure API Key (Optional but Recommended)**:
+   Copy `.env.example` to `.env` and set your Google Fact Check Tools API key:
+   ```bash
+   # In .env:
+   FACT_CHECK_API_KEY=your_api_key_here
+   ```
+
+3. **Start the Application**:
    ```bash
    python app.py
    ```

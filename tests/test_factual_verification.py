@@ -20,7 +20,7 @@ import unittest
 if sys.stdout and hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-from app import app, verify_factual_claim_pipeline, clean_text
+from app import app, verify_factual_claim_pipeline, clean_text, query_google_fact_check_api
 
 
 class TestFactualVerificationAndPrediction(unittest.TestCase):
@@ -196,6 +196,17 @@ class TestFactualVerificationAndPrediction(unittest.TestCase):
         self.assertIn("FAKE NEWS", html_content)
         self.assertIn("CONTRADICTED", html_content)
         self.assertIn("In India, Independence Day is celebrated on 15 August, not 17 May.", html_content)
+
+    # -------------------------------------------------------------------------
+    # 11. Google Fact Check Tools API Integration
+    # -------------------------------------------------------------------------
+    def test_google_fact_check_api_debunk(self):
+        text = "5G wireless networks accelerate and spread coronavirus"
+        res = query_google_fact_check_api(text)
+        if res is not None:
+            self.assertEqual(res["status"], "Contradicted")
+            self.assertIn("Google Fact Check Tools", res["source"])
+            self.assertTrue(res["link"].startswith("http"))
 
 
 if __name__ == "__main__":
