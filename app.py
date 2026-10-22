@@ -1,4 +1,6 @@
 import time
+import warnings
+warnings.filterwarnings("ignore")
 from flask import Flask, render_template, request, jsonify
 import joblib
 import os
