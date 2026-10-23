@@ -14,6 +14,23 @@ import urllib.parse
 import urllib.error
 from bs4 import BeautifulSoup
 
+def _load_env_file():
+    env_file = os.path.join(os.path.dirname(__file__), ".env")
+    if os.path.exists(env_file):
+        try:
+            with open(env_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        os.environ.setdefault(k.strip(), v.strip())
+        except Exception:
+            pass
+
+_load_env_file()
+
+GOOGLE_FACT_CHECK_API_KEY = os.environ.get("GOOGLE_FACT_CHECK_API_KEY", "").strip()
+
 app = Flask(__name__)
 
 # Download NLTK stopwords if required
@@ -30,6 +47,8 @@ MODEL_PATH = os.path.join("models", "model.pkl")
 VECTORIZER_PATH = os.path.join("models", "vectorizer.pkl")
 
 model = joblib.load(MODEL_PATH)
+if not hasattr(model, "multi_class"):
+    model.multi_class = "auto"
 vectorizer = joblib.load(VECTORIZER_PATH)
 
 
@@ -467,6 +486,111 @@ def format_date_display(d_str):
     return str(d_str).title()
 
 
+def query_google_fact_check(text):
+    """
+    Queries Google Fact Check Tools API (ClaimReview) for accredited third-party fact checks.
+    """
+    api_key = os.environ.get("GOOGLE_FACT_CHECK_API_KEY") or GOOGLE_FACT_CHECK_API_KEY
+    if not api_key:
+        return None
+
+    import json
+    import urllib.request
+    import urllib.parse
+
+    stop_words_local = {
+        "the", "and", "for", "that", "this", "with", "from", "have", "were", "been",
+        "will", "would", "could", "should", "about", "after", "before", "their", "there",
+        "what", "when", "where", "which", "who", "whom", "whose", "why", "how", "than",
+        "more", "some", "such", "into", "over", "under", "also", "just", "only", "very",
+        "claim", "claims", "article", "report", "news", "is", "are", "was", "were", "in", "of",
+        "on", "at", "to", "by", "an", "a", "it", "he", "she", "they", "we", "case", "registered",
+        "according", "said", "say", "says", "post", "shared", "viral", "video", "photo", "image",
+        "can", "help", "celebrated", "celebrate", "day"
+    }
+
+    words = re.findall(r"\b[a-zA-Z]{3,}\b", text.lower())
+    user_tokens = [w for w in words if w not in stop_words_local]
+    user_token_set = set(user_tokens)
+    if not user_token_set or len(user_token_set) < 2:
+        return None
+
+    queries = []
+    if len(user_tokens) >= 2:
+        queries.append(" ".join(user_tokens[:3]))
+
+    proper_nouns = re.findall(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b", text)
+    for p in proper_nouns:
+        p_tokens = [w for w in re.findall(r"\b[a-zA-Z]{3,}\b", p.lower()) if w not in stop_words_local]
+        if 1 <= len(p_tokens) <= 3:
+            p_str = " ".join(p_tokens)
+            if p_str not in queries:
+                queries.append(p_str)
+
+    for query in queries[:2]:
+        try:
+            url = f"https://factchecktools.googleapis.com/v1alpha1/claims:search?query={urllib.parse.quote(query)}&key={api_key}"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"})
+            with urllib.request.urlopen(req, timeout=4) as response:
+                data = json.loads(response.read().decode("utf-8"))
+
+            for claim in data.get("claims", []):
+                claim_text = claim.get("text", "")
+                claim_tokens = set(w for w in re.findall(r"\b[a-zA-Z]{3,}\b", claim_text.lower()) if w not in stop_words_local)
+                if not claim_tokens:
+                    continue
+
+                overlap = user_token_set.intersection(claim_tokens)
+                if len(overlap) < 2 or (len(overlap) / len(claim_tokens)) < 0.25:
+                    continue
+
+                reviews = claim.get("claimReview", [])
+                if not reviews:
+                    continue
+                review = reviews[0]
+                rating = (review.get("textualRating") or "").strip()
+                if not rating:
+                    continue
+
+                publisher_name = review.get("publisher", {}).get("name", "Accredited Fact-Checker")
+                review_url = review.get("url", "")
+                rating_lower = rating.lower()
+
+                false_signals = [
+                    "false", "fake", "hoax", "pants on fire", "misleading", "incorrect", "altered", 
+                    "manipulated", "untrue", "debunk", "baseless", "fabricated", "myth", "distorted", 
+                    "disproven", "satire", "refuted", "inaccurate", "wrong"
+                ]
+                true_signals = [
+                    "true", "correct", "accurate", "verified", "authentic", "confirmed"
+                ]
+
+                if any(sig in rating_lower for sig in false_signals):
+                    status = "Contradicted"
+                    explanation = f"Flagged by {publisher_name} as '{rating}'. The claim was investigated and debunked by accredited fact-checkers."
+                elif any(sig in rating_lower for sig in true_signals):
+                    status = "Supported"
+                    explanation = f"Verified by {publisher_name} as '{rating}'. The factual assertion is corroborated by accredited reference fact-checking."
+                else:
+                    status = "Mixed or Misleading"
+                    explanation = f"Evaluated by {publisher_name} as '{rating}'. The claim contains missing context or partially misleading elements."
+
+                evidence = f"Claim Evaluated: \"{claim_text}\"\nRating by {publisher_name}: {rating}."
+
+                return {
+                    "status": status,
+                    "title": f"Google Fact Check: {publisher_name} ({rating})",
+                    "source": f"{publisher_name} (via Google Fact Check API)",
+                    "link": review_url,
+                    "explanation": explanation,
+                    "evidence": evidence
+                }
+        except Exception:
+            continue
+
+    return None
+
+
 def verify_factual_claim_pipeline(text):
     """
     Performs comprehensive multi-stage factual verification:
@@ -546,6 +670,13 @@ def verify_factual_claim_pipeline(text):
                         "explanation": f"In India, {rec['title'].split(':')[-1].strip()} is celebrated on {official_disp}, not {claim_disp}.",
                         "evidence": rec["evidence"]
                     }
+
+    # ----------------------------------------------------
+    # STAGE 2.5: Google Fact Check Tools API (Live ClaimReview Verification)
+    # ----------------------------------------------------
+    google_fact_check = query_google_fact_check(text)
+    if google_fact_check:
+        return google_fact_check
 
     # ----------------------------------------------------
     # STAGE 3: Authoritative Encyclopedic Verification (Wikipedia API)
@@ -889,10 +1020,13 @@ def predict():
     fake_prob = 0.0
     real_prob = 0.0
     if hasattr(model, "predict_proba"):
-        probabilities = model.predict_proba(features)[0]
-        fake_prob = round(float(probabilities[0]) * 100, 2)
-        real_prob = round(float(probabilities[1]) * 100, 2)
-        confidence = round(max(probabilities) * 100, 2)
+        try:
+            probabilities = model.predict_proba(features)[0]
+            fake_prob = round(float(probabilities[0]) * 100, 2)
+            real_prob = round(float(probabilities[1]) * 100, 2)
+            confidence = round(max(probabilities) * 100, 2)
+        except Exception:
+            confidence = 100.0
     else:
         confidence = 100.0
 
